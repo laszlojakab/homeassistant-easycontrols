@@ -1,0 +1,21 @@
+{
+    "config": {
+        "title": "Helios Easy Controls",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "name": "Device name"
+                },
+                "description": "Controlling and monitoring Helios Easy Controls devices.",
+                "title": "Configure Helios Easy Controls"
+            }
+        },
+        "error": {
+            "invalid_host": "Invalid host. Check host and make sure that Modbus integration turned on device."
+        },
+        "abort": {
+            "already_configured": "These device already registered."
+        }
+    }
+}

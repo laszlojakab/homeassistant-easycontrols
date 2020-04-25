@@ -1,0 +1,13 @@
+{
+  "domain": "easycontrols",
+  "name": "Helios Easy Controls",
+  "documentation": "",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": [
+    "@laszlojakab"
+  ],
+  "requirements": [
+    "eazyctrl"
+  ]
+}

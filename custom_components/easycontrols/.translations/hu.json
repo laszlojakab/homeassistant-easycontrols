@@ -1,0 +1,21 @@
+{
+    "config": {
+        "title": "Helios Easy Controls",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "name": "Eszköz neve"
+                },
+                "description": "Helios Easy Controls alapú szellőztető rendszerek monitorozása és irányítása.",
+                "title": "Helios Easy Controls konfiguráció."
+            }
+        },
+        "error": {
+            "invalid_host": "Hibás host. Ellenőrizd a host beállítást és hogy Modbus engedélyezve van-e az eszközön!"
+        },
+        "abort": {
+            "already_configured": "These device already registered."
+        }
+    }
+}
