@@ -1,7 +1,7 @@
 {
   "domain": "easycontrols",
   "name": "Helios Easy Controls",
-  "documentation": "",
+  "documentation": "https://github.com/laszlojakab/homeassistant-easycontrols#usage",
   "dependencies": [],
   "config_flow": true,
   "codeowners": [
