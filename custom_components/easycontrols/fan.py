@@ -29,7 +29,9 @@ from .const import (CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL,
                     VARIABLE_TEMPERATURE_EXTRACT_AIR,
                     VARIABLE_TEMPERATURE_OUTGOING_AIR,
                     VARIABLE_TEMPERATURE_OUTSIDE_AIR,
-                    VARIABLE_TEMPERATURE_SUPPLY_AIR, VARIABLE_WARNINGS)
+                    VARIABLE_TEMPERATURE_SUPPLY_AIR,
+                    VARIABLE_WARNINGS,
+                    VARIABLE_BYPASS)
 
 SUPPORT_SET_SPEED = 1
 
@@ -210,6 +212,8 @@ class EasyControlFanDevice(FanEntity):
         standby_mode = self._controller.get_variable(VARIABLE_STANDBY_MODE, 1, int)
         holiday_mode = self._controller.get_variable(VARIABLE_HOLIDAY_MODE, 1, int)
 
+        bypass = self._controller.get_variable(VARIABLE_BYPASS, 1, bool)
+
         if party_mode == 1:
             preset_mode = PRESET_PARTY
         else:
@@ -271,6 +275,7 @@ class EasyControlFanDevice(FanEntity):
             "preheater_percentage": preheater_percentage,
             "afterheater_percentage": afterheater_percentage,
             "maximum_air_flow": self._maximum_air_flow,
+            "bypass": bypass,
             "heat_exchanged": heat_exchanged,
             "heat_exchanger_efficiency": heat_exchanger_efficiency,
             "errors": errors,
