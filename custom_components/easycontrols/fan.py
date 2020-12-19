@@ -212,7 +212,7 @@ class EasyControlFanDevice(FanEntity):
         standby_mode = self._controller.get_variable(VARIABLE_STANDBY_MODE, 1, int)
         holiday_mode = self._controller.get_variable(VARIABLE_HOLIDAY_MODE, 1, int)
 
-        bypass = self._controller.get_variable(VARIABLE_BYPASS, 1, bool)
+        bypass = self._controller.get_variable(VARIABLE_BYPASS, 1, int) == 1
 
         if party_mode == 1:
             preset_mode = PRESET_PARTY
