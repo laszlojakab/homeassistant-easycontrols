@@ -105,7 +105,7 @@ class EasyControlFanDevice(FanEntity):
             speed = SPEED_RATED_VENTILATION
 
         self._controller.set_variable(
-            VARIABLE_FAN_STAGE, self.speed_list.index(speed), "{:d}"
+            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, "{:d}"
         )
 
     async def async_turn_off(self, **kwargs):
