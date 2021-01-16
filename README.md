@@ -20,6 +20,8 @@ Integration adds a fan entity, and the following sensors:
 
 - Extract air relative humidity
 
+- Party mode remaning time
+
 - Airflow rate (approximately value)
 - Fan speed percentage
 - Fan stage
@@ -41,4 +43,4 @@ Integration adds a fan entity, and the following sensors:
 - Warnings
 - Information
 
-
+Also it adds service `easycontrols.party_mode` to change fan speed for limited time.
