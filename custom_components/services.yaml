@@ -1,0 +1,12 @@
+party_mode:
+  description: Change fan speed for limited time
+  fields:
+    entity_id:
+      description: Name of the entity.
+      example: "fan.helios"
+    speed:
+      description: "Boost speed. Available: basic, rated, intensive, maximum"
+      example: intensive
+    duration:
+      description: Duration in minutes
+      example: 60

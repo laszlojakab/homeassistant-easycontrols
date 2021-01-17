@@ -21,6 +21,8 @@ from .const import (
     VARIABLE_HOLIDAY_MODE,
     VARIABLE_OPERATING_MODE,
     VARIABLE_PARTY_MODE,
+    VARIABLE_PARTY_MODE_FAN_STAGE,
+    VARIABLE_PARTY_MODE_DURATION,
     VARIABLE_PERCENTAGE_FAN_SPEED,
     VARIABLE_STANDBY_MODE
 )
@@ -114,6 +116,24 @@ class EasyControlFanDevice(FanEntity):
         )  # operation mode = manual
         self._controller.set_variable(VARIABLE_FAN_STAGE, 0, "{:d}")
 
+    def start_party_mode(self, speed: str, duration: int):
+        if duration == 0:
+            # stop current party mode
+            self._controller.set_variable(
+                VARIABLE_PARTY_MODE, 0, "{:d}"
+            )
+            return
+
+        self._controller.set_variable(
+            VARIABLE_PARTY_MODE_FAN_STAGE, self.speed_list.index(speed) + 1, "{:d}"
+        )
+        self._controller.set_variable(
+            VARIABLE_PARTY_MODE_DURATION, duration, "{:d}"
+        )
+        self._controller.set_variable(
+            VARIABLE_PARTY_MODE, 1, "{:d}"
+        )
+
     async def async_update(self):
         self._percentage_fan_speed = float(
             self._controller.get_variable(
@@ -169,7 +189,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     name = entry.data[CONF_NAME]
     controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
+    fan = EasyControlFanDevice(hass, controller, name)
 
-    async_add_entities([EasyControlFanDevice(hass, controller, name)])
+    async_add_entities([fan])
+
+    def handle_party_mode(call):
+        duration = call.data.get('duration', 60)
+        speed = call.data.get('speed', 'high')
+        fan.start_party_mode(speed, duration)
+
+    hass.services.async_register(DOMAIN, "party_mode", handle_party_mode)
 
     _LOGGER.info("Setting up Helios EasyControls fan device completed.")

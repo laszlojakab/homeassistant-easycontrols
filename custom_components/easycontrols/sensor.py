@@ -24,6 +24,7 @@ from .const import (
     VARIABLE_PERCENTAGE_PREHEATER,
     VARIABLE_PERCENTAGE_FAN_SPEED,
     VARIABLE_FAN_STAGE,
+    VARIABLE_PARTY_MODE_REMAINING_TIME,
     VARIABLE_PREHEATER_STATUS,
     VARIABLE_AFTERHEATER_STATUS
 )
@@ -384,6 +385,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         ),
         EasyControlSensor(
             controller, VARIABLE_HUMIDITY_EXTRACT_AIR, 8, int, f"{name} extract air relative humidity", name, "mdi:water-percent", "%"
+        ),
+        EasyControlSensor(
+            controller, VARIABLE_PARTY_MODE_REMAINING_TIME, 8, int, f"{name} party mode remaining time", name, "mdi:clock", "min"
         ),
         EasyControlSensor(
             controller, VARIABLE_OPERATION_HOURS_SUPPLY_AIR_FAN, 10, lambda x: round(float(
