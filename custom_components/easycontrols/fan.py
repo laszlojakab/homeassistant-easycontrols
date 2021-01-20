@@ -23,7 +23,8 @@ from .const import (
     VARIABLE_PARTY_MODE,
     VARIABLE_PARTY_MODE_FAN_STAGE,
     VARIABLE_PARTY_MODE_DURATION,
-    VARIABLE_PERCENTAGE_FAN_SPEED,
+    VARIABLE_SUPPLY_AIR_RPM,
+    VARIABLE_EXTRACT_AIR_RPM,
     VARIABLE_STANDBY_MODE
 )
 
@@ -42,7 +43,8 @@ class EasyControlFanDevice(FanEntity):
         self._controller = controller
         self._name = name
         self._fan_stage = None
-        self._percentage_fan_speed = None
+        self._supply_air_rpm = None
+        self._extract_air_rpm = None
         self._attributes = {}
 
     @property
@@ -89,7 +91,8 @@ class EasyControlFanDevice(FanEntity):
 
     @property
     def is_on(self):
-        return not self._percentage_fan_speed is None and self._percentage_fan_speed > 0
+        return ((not self._supply_air_rpm is None and self._supply_air_rpm > 0) or
+        (not self._extract_air_rpm is None and self._extract_air_rpm > 0))
 
     async def async_set_speed(self, speed: str):
         self._controller.set_variable(
@@ -125,7 +128,8 @@ class EasyControlFanDevice(FanEntity):
             return
 
         self._controller.set_variable(
-            VARIABLE_PARTY_MODE_FAN_STAGE, self.speed_list.index(speed) + 1, "{:d}"
+            VARIABLE_PARTY_MODE_FAN_STAGE, self.speed_list.index(
+                speed) + 1, "{:d}"
         )
         self._controller.set_variable(
             VARIABLE_PARTY_MODE_DURATION, duration, "{:d}"
@@ -135,10 +139,8 @@ class EasyControlFanDevice(FanEntity):
         )
 
     async def async_update(self):
-        self._percentage_fan_speed = float(
-            self._controller.get_variable(
-                VARIABLE_PERCENTAGE_FAN_SPEED, 8, float)
-        )
+        self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM, 8, float)
+        self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM, 8, float)
         self._fan_stage = int(
             self._controller.get_variable(VARIABLE_FAN_STAGE, 1, int))
 
@@ -183,6 +185,7 @@ class EasyControlFanDevice(FanEntity):
             "preset_mode": preset_mode,
             "operation_mode": operation_mode
         }
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up Helios EasyControls fan device.")
