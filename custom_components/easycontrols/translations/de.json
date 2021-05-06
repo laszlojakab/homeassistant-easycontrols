@@ -1,0 +1,20 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host oder IP-Adresse",
+                    "name": "Gerätename"
+                },
+                "description": "Helios Easy Controls Geräte kontrollieren und überwachen.",
+                "title": "Konfiguration Helios Easy Controls"
+            }
+        },
+        "error": {
+            "invalid_host": "Ungültiger Host oder IP-Adresse. Stelle sicher, dass die Modbus-Integration im Gerät aktiviert ist."
+        },
+        "abort": {
+            "already_configured": "Dieses Gerät wurde bereits registriert."
+        }
+    }
+}
