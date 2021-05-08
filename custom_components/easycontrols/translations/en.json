@@ -11,10 +11,10 @@
             }
         },
         "error": {
-            "invalid_host": "Invalid host. Check host and make sure that Modbus integration turned on device."
+            "invalid_host": "Invalid host. Check host and make sure that Modbus integration is turned on on the device."
         },
         "abort": {
-            "already_configured": "These device already registered."
+            "already_configured": "This device is already registered."
         }
     }
 }
