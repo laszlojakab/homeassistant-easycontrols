@@ -357,13 +357,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
             controller, VARIABLE_PERCENTAGE_FAN_SPEED, 8, float, f"{name} fan speed percentage", name, "mdi:air-conditioner"
         ),
         EasyControlSensor(
-            controller, VARIABLE_FAN_STAGE, 1, int, f"{name} fan stage", name, "mdi:air-conditioner"
+            controller, VARIABLE_FAN_STAGE, 1, int, f"{name} fan stage", name, "mdi:air-conditioner", " "
         ),
         EasyControlSensor(
-            controller, VARIABLE_EXTRACT_AIR_FAN_STAGE, 1, int, f"{name} extract air fan stage", name, "mdi:air-conditioner"
+            controller, VARIABLE_EXTRACT_AIR_FAN_STAGE, 1, int, f"{name} extract air fan stage", name, "mdi:air-conditioner", " "
         ),
         EasyControlSensor(
-            controller, VARIABLE_SUPPLY_AIR_FAN_STAGE, 1, int, f"{name} supply air fan stage", name, "mdi:air-conditioner"
+            controller, VARIABLE_SUPPLY_AIR_FAN_STAGE, 1, int, f"{name} supply air fan stage", name, "mdi:air-conditioner", " "
         ),
         EasyControlSensor(
             controller, VARIABLE_TEMPERATURE_OUTSIDE_AIR, 8, float, f"{name} outside air temperature", name,  "mdi:thermometer", "°C"
