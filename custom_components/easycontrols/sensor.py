@@ -396,10 +396,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
             controller, VARIABLE_TEMPERATURE_OUTGOING_AIR, 8, float, f"{name} outgoing air temperature", name, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE, "°C", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_EXTRACT_AIR_RPM, 8, int, f"{name} extract air rpm", name, "mdi:rotate-3d-variant", None, "rpm", None, STATE_CLASS_MEASUREMENT
+            controller, VARIABLE_EXTRACT_AIR_RPM, 8, int, f"{name} extract air rpm", name, "mdi:rotate-3d-variant", None, "rpm", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_SUPPLY_AIR_RPM, 8, int, f"{name} supply air rpm", name, "mdi:rotate-3d-variant", None, "rpm", None, STATE_CLASS_MEASUREMENT
+            controller, VARIABLE_SUPPLY_AIR_RPM, 8, int, f"{name} supply air rpm", name, "mdi:rotate-3d-variant", None, "rpm", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
             controller, VARIABLE_HUMIDITY_EXTRACT_AIR, 8, int, f"{name} extract air relative humidity", name, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, "%", STATE_CLASS_MEASUREMENT
