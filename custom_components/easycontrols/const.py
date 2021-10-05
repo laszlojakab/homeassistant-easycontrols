@@ -2,6 +2,7 @@
 
 DOMAIN = "easycontrols"
 CONTROLLER = "controller"
+MAC_ADDRESS = "mac"
 
 MODE_MANUAL = "manual"
 MODE_AUTO = "auto"

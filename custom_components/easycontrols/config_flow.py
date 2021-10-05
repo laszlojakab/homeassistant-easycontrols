@@ -4,7 +4,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME
 
-from .const import CONTROLLER, DOMAIN, VARIABLE_ARTICLE_DESCRIPTION
+from .const import CONTROLLER, DOMAIN, VARIABLE_ARTICLE_DESCRIPTION, VARIABLE_MAC_ADDRESS, MAC_ADDRESS
 
 
 @config_entries.HANDLERS.register(DOMAIN)
@@ -19,10 +19,11 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 controller = eazyctrl.EazyController(info[CONF_HOST])
                 device_type = controller.get_variable(VARIABLE_ARTICLE_DESCRIPTION, 31)
+                mac_address = controller.get_variable(VARIABLE_MAC_ADDRESS, 18, str)
             except:
                 return await self._show_form(errors={CONF_HOST: "invalid_host"})
 
-            data = {CONF_NAME: info[CONF_NAME], CONF_HOST: info[CONF_HOST]}
+            data = {CONF_NAME: info[CONF_NAME], CONF_HOST: info[CONF_HOST], MAC_ADDRESS: mac_address}
             return self.async_create_entry(
                 title=f"Helios {device_type} ({info[CONF_NAME]})", data=data
             )

@@ -15,19 +15,23 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ThreadSafeController:
-    def __init__(self, host: str):
+    def __init__(self, host: str, mac: str):
         self._host = host
         self._eazyctrl = eazyctrl.EazyController(host)
         self._lock = threading.Lock()
-        self._mac = self.get_variable(VARIABLE_MAC_ADDRESS, 18, str)
-        self._model = self.get_variable(VARIABLE_ARTICLE_DESCRIPTION, 128, str)
-        self._version = self.get_variable(VARIABLE_SOFTWARE_VERSION, 128, str)
-        self._serial_number = self.get_variable(
-            VARIABLE_SERIAL_NUMBER, 16, str)
-        self._maximum_air_flow = float(re.findall(r"\d+", self._model)[0])
+        self._mac = mac
+        self._model = None
+        self._version = None
+        self._serial_number = None
+        self._maximum_air_flow = None
 
     @property
     def maximum_air_flow(self):
+        if (self._maximum_air_flow is None):
+            if (self.model is None):
+                return None
+
+            self._maximum_air_flow = float(re.findall(r"\d+", self.model)[0])
         return self._maximum_air_flow
 
     @property
@@ -40,14 +44,31 @@ class ThreadSafeController:
 
     @property
     def model(self):
+        if (self._model is None):
+            try:
+                self._model = self.get_variable(VARIABLE_ARTICLE_DESCRIPTION, 128, str)
+            except Exception as e:
+                _LOGGER.error(e)
         return self._model
 
     @property
     def version(self):
+        if (self._version is None):
+            try:
+                self._version = self.get_variable(VARIABLE_SOFTWARE_VERSION, 128, str)
+            except Exception as e:
+                _LOGGER.error(e)
+
         return self._version
 
     @property
     def serial_number(self):
+        if (self._serial_number is None):
+            try:
+                self._serial_number = self.get_variable(VARIABLE_SERIAL_NUMBER, 16, str)
+            except Exception as e:
+                _LOGGER.error(e)
+
         return self._serial_number
 
     def get_variable(self, variable_name, variable_length, conversion=None):
