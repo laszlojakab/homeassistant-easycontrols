@@ -24,27 +24,35 @@ from .const import (
     VARIABLE_PERCENTAGE_PREHEATER,
     VARIABLE_PERCENTAGE_FAN_SPEED,
     VARIABLE_FAN_STAGE,
-    VARIABLE_PARTY_MODE_REMAINING_TIME,
-    VARIABLE_PREHEATER_STATUS,
-    VARIABLE_AFTERHEATER_STATUS
+    VARIABLE_PARTY_MODE_REMAINING_TIME
 )
 
 from .threadsafe_controller import (ThreadSafeController)
-from homeassistant.const import (CONF_HOST, CONF_NAME)
-from homeassistant.helpers.entity import (Entity)
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_TEMPERATURE
+)
 from homeassistant.helpers import device_registry as dr
+from homeassistant.components.sensor import (
+    STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL_INCREASING,
+    SensorEntity
+)
 
 import logging
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class EasyControlAirFlowRateSensor(Entity):
+class EasyControlAirFlowRateSensor(SensorEntity):
     def __init__(self, controller: ThreadSafeController, device_name: str):
         self._controller = controller
         self._name = f"{device_name} airflow rate"
         self._device_name = device_name
         self._state = "unavailable"
+        self._attr_state_class = STATE_CLASS_MEASUREMENT
 
     async def async_update(self):
         percentage_fan_speed = float(
@@ -93,13 +101,15 @@ class EasyControlAirFlowRateSensor(Entity):
     def unit_of_measurement(self):
         return "m³/h"
 
-class EasyControlEfficiencySensor(Entity):
+
+class EasyControlEfficiencySensor(SensorEntity):
     # https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     def __init__(self, controller: ThreadSafeController, device_name: str):
         self._controller = controller
         self._name = f"{device_name} heat recovery efficiency"
         self._device_name = device_name
         self._state = "unavailable"
+        self._attr_state_class = STATE_CLASS_MEASUREMENT
 
     async def async_update(self):
         outside_air_temperature = float(
@@ -227,7 +237,7 @@ class EasyControlEfficiencySensor(Entity):
 #     def unit_of_measurement(self):
 #         return "m³/h"
 
-class EasyControlFlagSensor(Entity):
+class EasyControlFlagSensor(SensorEntity):
     def __init__(self, controller: ThreadSafeController, variable: str, size: int, converter, flags, name: str, device_name: str, icon: str):
         self._controller = controller
         self._variable = variable
@@ -291,8 +301,8 @@ class EasyControlFlagSensor(Entity):
         return self._icon
 
 
-class EasyControlSensor(Entity):
-    def __init__(self, controller: ThreadSafeController, variable: str, size: int, converter, name: str, device_name: str, icon: str, unit_of_measurement: str = None):
+class EasyControlSensor(SensorEntity):
+    def __init__(self, controller: ThreadSafeController, variable: str, size: int, converter, name: str, device_name: str, icon: str, device_class: str = None, unit_of_measurement: str = None, state_class=None):
         self._controller = controller
         self._variable = variable
         self._converter = converter
@@ -301,7 +311,10 @@ class EasyControlSensor(Entity):
         self._device_name = device_name
         self._icon = icon
         self._unit_of_measurement = unit_of_measurement
+        self._state_class = state_class
         self._state = "unavailable"
+        self._attr_state_class = state_class
+        self._device_class = device_class
 
     async def async_update(self):
         self._state = self._controller.get_variable(
@@ -345,6 +358,11 @@ class EasyControlSensor(Entity):
         """Return the icon of the sensor."""
         return self._icon
 
+    @property
+    def device_class(self):
+        """Return the device class of the sensor."""
+        return self._device_class
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up Helios EasyControls sensors.")
@@ -357,45 +375,57 @@ async def async_setup_entry(hass, entry, async_add_entities):
             controller, VARIABLE_PERCENTAGE_FAN_SPEED, 8, float, f"{name} fan speed percentage", name, "mdi:air-conditioner"
         ),
         EasyControlSensor(
-            controller, VARIABLE_FAN_STAGE, 1, int, f"{name} fan stage", name, "mdi:air-conditioner", " "
+            controller, VARIABLE_FAN_STAGE, 1, int, f"{name} fan stage", name, "mdi:air-conditioner", None, " "
         ),
         EasyControlSensor(
-            controller, VARIABLE_EXTRACT_AIR_FAN_STAGE, 1, int, f"{name} extract air fan stage", name, "mdi:air-conditioner", " "
+            controller, VARIABLE_EXTRACT_AIR_FAN_STAGE, 1, int, f"{name} extract air fan stage", name, "mdi:air-conditioner", None, " "
         ),
         EasyControlSensor(
-            controller, VARIABLE_SUPPLY_AIR_FAN_STAGE, 1, int, f"{name} supply air fan stage", name, "mdi:air-conditioner", " "
+            controller, VARIABLE_SUPPLY_AIR_FAN_STAGE, 1, int, f"{name} supply air fan stage", name, "mdi:air-conditioner", None, " "
         ),
         EasyControlSensor(
-            controller, VARIABLE_TEMPERATURE_OUTSIDE_AIR, 8, float, f"{name} outside air temperature", name,  "mdi:thermometer", "°C"
+            controller, VARIABLE_TEMPERATURE_OUTSIDE_AIR, 8, float, f"{name} outside air temperature", name,  "mdi:thermometer", DEVICE_CLASS_TEMPERATURE, "°C", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_TEMPERATURE_SUPPLY_AIR, 8, float, f"{name} supply air temperature", name, "mdi:thermometer", "°C"
+            controller, VARIABLE_TEMPERATURE_SUPPLY_AIR, 8, float, f"{name} supply air temperature", name, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE, "°C", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_TEMPERATURE_EXTRACT_AIR, 8, float, f"{name} extract air temperature", name, "mdi:thermometer", "°C"
+            controller, VARIABLE_TEMPERATURE_EXTRACT_AIR, 8, float, f"{name} extract air temperature", name, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE, "°C", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_TEMPERATURE_OUTGOING_AIR, 8, float, f"{name} outgoing air temperature", name, "mdi:thermometer", "°C"
+            controller, VARIABLE_TEMPERATURE_OUTGOING_AIR, 8, float, f"{name} outgoing air temperature", name, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE, "°C", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_EXTRACT_AIR_RPM, 8, int, f"{name} extract air rpm", name, "mdi:rotate-3d-variant", "rpm"
+            controller, VARIABLE_EXTRACT_AIR_RPM, 8, int, f"{name} extract air rpm", name, "mdi:rotate-3d-variant", None, "rpm", None, STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_SUPPLY_AIR_RPM, 8, int, f"{name} supply air rpm", name, "mdi:rotate-3d-variant", "rpm"
+            controller, VARIABLE_SUPPLY_AIR_RPM, 8, int, f"{name} supply air rpm", name, "mdi:rotate-3d-variant", None, "rpm", None, STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_HUMIDITY_EXTRACT_AIR, 8, int, f"{name} extract air relative humidity", name, "mdi:water-percent", "%"
+            controller, VARIABLE_HUMIDITY_EXTRACT_AIR, 8, int, f"{name} extract air relative humidity", name, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, "%", STATE_CLASS_MEASUREMENT
         ),
         EasyControlSensor(
-            controller, VARIABLE_PARTY_MODE_REMAINING_TIME, 8, int, f"{name} party mode remaining time", name, "mdi:clock", "min"
+            controller, VARIABLE_PARTY_MODE_REMAINING_TIME, 8, int, f"{name} party mode remaining time", name, "mdi:clock", None, "min"
         ),
         EasyControlSensor(
             controller, VARIABLE_OPERATION_HOURS_SUPPLY_AIR_FAN, 10, lambda x: round(float(
-                x) / 60.0, 2), f"{name} supply air fan operation hours", name, "mdi:history", "h"
+                x) / 60.0, 2), f"{name} supply air fan operation hours", name, "mdi:history", None, "h"
         ),
         EasyControlSensor(
             controller, VARIABLE_OPERATION_HOURS_EXTRACT_AIR_FAN, 10, lambda x: round(float(
-                x) / 60.0, 2), f"{name} extract air fan operation hours", name, "mdi:history", "h"
+                x) / 60.0, 2), f"{name} extract air fan operation hours", name, "mdi:history", None, "h"
+        ),
+        EasyControlSensor(
+            controller, VARIABLE_OPERATION_HOURS_PREHEATER, 10, lambda x: round(float(
+                x) / 60.0, 2), f"{name} preheater operation hours", name, "mdi:history", None, "h", STATE_CLASS_TOTAL_INCREASING
+        ),
+        EasyControlSensor(
+            controller, VARIABLE_PERCENTAGE_PREHEATER, 4, float, f"{name} preheater percentage", name, "mdi:thermometer-lines", None, "%", STATE_CLASS_MEASUREMENT
+        ),
+        EasyControlSensor(
+            controller, VARIABLE_OPERATION_HOURS_AFTERHEATER, 10, lambda x: round(float(x) / 60.0, 2), f"{name} afterheater operation hours", name, "mdi:history", None, "h", STATE_CLASS_TOTAL_INCREASING),
+        EasyControlSensor(
+            controller, VARIABLE_PERCENTAGE_AFTERHEATER, 4, float, f"{name} afterheater percentage", name, "mdi:thermometer-lines", None, "%", STATE_CLASS_MEASUREMENT
         ),
         EasyControlFlagSensor(
             controller, VARIABLE_ERRORS, 32, int, ERRORS, f"{name} errors", name, "mdi:alert-circle"
@@ -413,27 +443,5 @@ async def async_setup_entry(hass, entry, async_add_entities):
             controller, name
         )
     ])
-
-    if (int(controller.get_variable(VARIABLE_PREHEATER_STATUS, 1, int))):
-        async_add_entities([
-            EasyControlSensor(
-                controller, VARIABLE_OPERATION_HOURS_PREHEATER, 10, lambda x: round(float(
-                    x) / 60.0, 2), f"{name} preheater operation hours", name, "mdi:history", "h"
-            ),
-            EasyControlSensor(
-                controller, VARIABLE_PERCENTAGE_PREHEATER, 4, float, f"{name} preheater percentage", name, "mdi:thermometer-lines", "%"
-            )
-        ])
-        
-    if (int(controller.get_variable(VARIABLE_AFTERHEATER_STATUS, 1, int))):
-        async_add_entities([
-            EasyControlSensor(
-                controller, VARIABLE_OPERATION_HOURS_AFTERHEATER, 10, lambda x: round(float(
-                    x) / 60.0, 2), f"{name} afterheater operation hours", name, "mdi:history", "h"
-            ),
-            EasyControlSensor(
-                controller, VARIABLE_PERCENTAGE_AFTERHEATER, 4, float, f"{name} afterheater percentage", name, "mdi:thermometer-lines", "%"
-            )            
-        ])
 
     _LOGGER.info("Setting up Helios EasyControls sensors completed.")
