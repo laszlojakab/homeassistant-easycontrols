@@ -363,6 +363,45 @@ class EasyControlSensor(SensorEntity):
         """Return the device class of the sensor."""
         return self._device_class
 
+class EasyControlVersionSensor(SensorEntity):
+    def __init__(self, controller: ThreadSafeController, name: str, device_name: str):
+        self._controller = controller
+        self._name = name
+        self._device_name = device_name
+
+    @property
+    def unique_id(self):
+        return self._controller.mac + self._name
+
+    @property
+    def device_info(self):
+        return {
+            "connections": {(dr.CONNECTION_NETWORK_MAC, self._controller.mac)},
+            "identifiers": {(DOMAIN, self._controller.serial_number)},
+            "name": self._device_name,
+            "manufacturer": "Helios",
+            "model": self._controller.model,
+            "sw_version": self._controller.version
+        }
+
+    @property
+    def should_poll(self):
+        return True
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self._controller.version or "unavailable"
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:new-box"
 
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up Helios EasyControls sensors.")
@@ -371,6 +410,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
 
     async_add_entities([
+        EasyControlVersionSensor(
+            controller, f"{name} software version", name
+        ),
         EasyControlSensor(
             controller, VARIABLE_PERCENTAGE_FAN_SPEED, 8, float, f"{name} fan speed percentage", name, "mdi:air-conditioner", None, "%"
         ),
