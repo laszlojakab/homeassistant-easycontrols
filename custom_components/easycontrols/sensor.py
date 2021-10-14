@@ -372,7 +372,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities([
         EasyControlSensor(
-            controller, VARIABLE_PERCENTAGE_FAN_SPEED, 8, float, f"{name} fan speed percentage", name, "mdi:air-conditioner"
+            controller, VARIABLE_PERCENTAGE_FAN_SPEED, 8, float, f"{name} fan speed percentage", name, "mdi:air-conditioner", None, "%"
         ),
         EasyControlSensor(
             controller, VARIABLE_FAN_STAGE, 1, int, f"{name} fan stage", name, "mdi:air-conditioner", None, " "
