@@ -11,6 +11,6 @@
     "@laszlojakab"
   ],
   "requirements": [
-    "eazyctrl"
+    "eazyctrl==0.3"
   ]
 }
