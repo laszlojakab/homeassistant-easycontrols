@@ -1,45 +1,43 @@
-# https://community.home-assistant.io/t/using-native-modbus-component-for-helios-kwl/107461
-"""
-Fan support for EasyControls Helios KWL Ventillation unit.
-"""
+# pylint: disable=bad-continuation
+'''
+Fan entity support for Helios Easy Controls device.
+'''
 import logging
-from datetime import timedelta
 
-from homeassistant.components.fan import (FanEntity)
-from homeassistant.const import (CONF_HOST, CONF_NAME)
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import (
-    async_track_state_change
-)
+from homeassistant.components.fan import FanEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.helpers import device_registry
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import HomeAssistantType
 
-from .threadsafe_controller import (ThreadSafeController)
-from .const import (
-    CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL,
-    PRESET_HOLIDAY_CONSTANT, PRESET_HOLIDAY_INTERVAL,
-    PRESET_NOT_SET, PRESET_PARTY, PRESET_STANDBY,
-    VARIABLE_FAN_STAGE,
-    VARIABLE_HOLIDAY_MODE,
-    VARIABLE_OPERATING_MODE,
-    VARIABLE_PARTY_MODE,
-    VARIABLE_PARTY_MODE_FAN_STAGE,
-    VARIABLE_PARTY_MODE_DURATION,
-    VARIABLE_SUPPLY_AIR_RPM,
-    VARIABLE_EXTRACT_AIR_RPM,
-    VARIABLE_STANDBY_MODE
-)
+from .const import (DATA_CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL,
+                    PRESET_HOLIDAY_CONSTANT, PRESET_HOLIDAY_INTERVAL,
+                    PRESET_NOT_SET, PRESET_PARTY, PRESET_STANDBY,
+                    VARIABLE_EXTRACT_AIR_RPM, VARIABLE_FAN_STAGE,
+                    VARIABLE_HOLIDAY_MODE, VARIABLE_OPERATING_MODE,
+                    VARIABLE_PARTY_MODE, VARIABLE_PARTY_MODE_DURATION,
+                    VARIABLE_PARTY_MODE_FAN_STAGE, VARIABLE_STANDBY_MODE,
+                    VARIABLE_SUPPLY_AIR_RPM)
+from .threadsafe_controller import ThreadSafeController
 
 SUPPORT_SET_SPEED = 1
 
-SPEED_BASIC_VENTILATION = "basic"
-SPEED_RATED_VENTILATION = "rated"
-SPEED_INTENSIVE_VENTILATION = "intensive"
-SPEED_MAXIMUM_FAN_SPEED = "maximum"
+SPEED_BASIC_VENTILATION = 'basic'
+SPEED_RATED_VENTILATION = 'rated'
+SPEED_INTENSIVE_VENTILATION = 'intensive'
+SPEED_MAXIMUM_FAN_SPEED = 'maximum'
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class EasyControlFanDevice(FanEntity):
-    def __init__(self, hass, controller: ThreadSafeController, name: str):
+    '''
+    Represents a fan entity which controls the Helios device.
+    '''
+
+    def __init__(self, controller: ThreadSafeController, name: str):
         self._controller = controller
         self._name = name
         self._fan_stage = None
@@ -48,34 +46,52 @@ class EasyControlFanDevice(FanEntity):
         self._attributes = {}
 
     @property
-    def name(self):
+    def name(self) -> str:
+        '''
+        Gets the name of the fan.
+        '''
         return self._name
 
     @property
     def device_state_attributes(self):
+        '''
+        Get the attributes of the fan.
+        '''
         return self._attributes
 
     @property
     def unique_id(self):
+        '''
+        Get the unique ID of the fan.
+        '''
         return self._controller.mac
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
+        '''
+        Gets the device information.
+        '''
         return {
-            "connections": {(dr.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            "identifiers": {(DOMAIN, self._controller.serial_number)},
-            "name": self._name,
-            "manufacturer": "Helios",
-            "model": self._controller.model,
-            "sw_version": self._controller.version
+            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
+            'identifiers': {(DOMAIN, self._controller.serial_number)},
+            'name': self._name,
+            'manufacturer': 'Helios',
+            'model': self._controller.model,
+            'sw_version': self._controller.version
         }
 
     @property
-    def supported_features(self):
+    def supported_features(self) -> int:
+        '''
+        Gets the supported features flag.
+        '''
         return SUPPORT_SET_SPEED
 
     @property
     def speed_list(self):
+        '''
+        Gets the supported speed list.
+        '''
         return [
             SPEED_BASIC_VENTILATION,
             SPEED_RATED_VENTILATION,
@@ -85,60 +101,92 @@ class EasyControlFanDevice(FanEntity):
 
     @property
     def speed(self):
+        '''
+        Gets the current speed.
+        '''
         if self._fan_stage is None or self._fan_stage == 0:
             return None
         return self.speed_list[self._fan_stage - 1]
 
     @property
     def is_on(self):
+        '''
+        Gets the value indicates whether the fan is on.
+        '''
         return ((not self._supply_air_rpm is None and self._supply_air_rpm > 0) or
-        (not self._extract_air_rpm is None and self._extract_air_rpm > 0))
+                (not self._extract_air_rpm is None and self._extract_air_rpm > 0))
 
     async def async_set_speed(self, speed: str):
+        '''
+        Sets the speed of the fan
+
+        Parameter
+        ---------
+        speed: str
+            The speed of the fan.
+        '''
         self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, "{:d}"
+            VARIABLE_OPERATING_MODE, 1, '{:d}'
         )  # operation mode = manual
         self._controller.set_variable(
-            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, "{:d}"
+            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, '{:d}'
         )
 
     async def async_turn_on(self, speed=None, **kwargs):
+        '''
+        Turns on the fan at the specific speed.
+        '''
         self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, "{:d}"
+            VARIABLE_OPERATING_MODE, 1, '{:d}'
         )  # operation mode = manual
         if speed is None:
             speed = SPEED_RATED_VENTILATION
 
         self._controller.set_variable(
-            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, "{:d}"
+            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, '{:d}'
         )
 
     async def async_turn_off(self, **kwargs):
+        '''
+        Turns off the fan.
+        '''
         self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, "{:d}"
+            VARIABLE_OPERATING_MODE, 1, '{:d}'
         )  # operation mode = manual
-        self._controller.set_variable(VARIABLE_FAN_STAGE, 0, "{:d}")
+        self._controller.set_variable(VARIABLE_FAN_STAGE, 0, '{:d}')
 
     def start_party_mode(self, speed: str, duration: int):
+        '''
+        Starts the party mode of the fan. Set duration to 0
+        to stop current party mode.
+
+        speed: str
+            The speed of the party mode.
+        duration: int
+            The duration of the party mode.
+        '''
         if duration == 0:
             # stop current party mode
             self._controller.set_variable(
-                VARIABLE_PARTY_MODE, 0, "{:d}"
+                VARIABLE_PARTY_MODE, 0, '{:d}'
             )
             return
 
         self._controller.set_variable(
             VARIABLE_PARTY_MODE_FAN_STAGE, self.speed_list.index(
-                speed) + 1, "{:d}"
+                speed) + 1, '{:d}'
         )
         self._controller.set_variable(
-            VARIABLE_PARTY_MODE_DURATION, duration, "{:d}"
+            VARIABLE_PARTY_MODE_DURATION, duration, '{:d}'
         )
         self._controller.set_variable(
-            VARIABLE_PARTY_MODE, 1, "{:d}"
+            VARIABLE_PARTY_MODE, 1, '{:d}'
         )
 
-    async def async_update(self):
+    async def async_update(self) -> None:
+        '''
+        Updates the fan device.
+        '''
         self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM, 8, float)
         self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM, 8, float)
         self._fan_stage = int(
@@ -169,30 +217,39 @@ class EasyControlFanDevice(FanEntity):
 
         operation_mode = MODE_AUTO if operation_mode == 0 else MODE_MANUAL
 
-        # air_flow_rate = self._controller.maximum_air_flow * \
-        #     self._percentage_fan_speed / 100.0
-
-        # # https://www.engineeringtoolbox.com/heater-coolers-ventilation-systems-d_200.html
-        # heat_exchanged = round(
-        #     air_flow_rate
-        #     / 3600
-        #     * 1.2
-        #     * (supply_air_temperature - outside_air_temperature),
-        #     2,
-        # )
-
         self._attributes = {
-            "preset_mode": preset_mode,
-            "operation_mode": operation_mode
+            'preset_mode': preset_mode,
+            'operation_mode': operation_mode
         }
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    _LOGGER.info("Setting up Helios EasyControls fan device.")
+async def async_setup_entry(
+    hass: HomeAssistantType,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback
+):
+    '''
+    Setup of Helios Easy Controls fan for the specified config_entry.
 
-    name = entry.data[CONF_NAME]
-    controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
-    fan = EasyControlFanDevice(hass, controller, name)
+    Parameters
+    ----------
+    hass: homeassistant.helpers.typing.HomeAssistantType
+        The Home Assistant instance.
+    config_entry: homeassistant.helpers.typing.ConfigEntry
+        The config entry which is used to create sensors.
+    async_add_entities: homeassistant.helpers.entity_platform.AddEntitiesCallback
+        The callback which can be used to add new entities to Home Assistant.
+
+    Returns
+    -------
+    bool
+        The value indicates whether the setup succeeded.
+    '''
+    _LOGGER.info('Setting up Helios EasyControls fan device.')
+
+    name = config_entry.data[CONF_NAME]
+    controller = hass.data[DOMAIN][DATA_CONTROLLER][config_entry.data[CONF_HOST]]
+    fan = EasyControlFanDevice(controller, name)
 
     async_add_entities([fan])
 
@@ -201,6 +258,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
         speed = call.data.get('speed', 'high')
         fan.start_party_mode(speed, duration)
 
-    hass.services.async_register(DOMAIN, "party_mode", handle_party_mode)
+    hass.services.async_register(DOMAIN, 'party_mode', handle_party_mode)
 
-    _LOGGER.info("Setting up Helios EasyControls fan device completed.")
+    _LOGGER.info('Setting up Helios EasyControls fan device completed.')
