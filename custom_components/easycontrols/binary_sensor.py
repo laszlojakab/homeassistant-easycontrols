@@ -31,7 +31,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
         controller: ThreadSafeController,
         variable_name: str,
         variable_size: int,
-        converter: Callable[[str], str],
+        converter: Callable[[str], bool],
         description: BinarySensorEntityDescription
     ):
         '''
@@ -45,9 +45,9 @@ class EasyControlBinarySensor(BinarySensorEntity):
             The ModBus variable name.
         variable_size: int
             The ModBus variable size.
-        converter: Callable[[str], Any]
+        converter: Callable[[str], bool]
             The converter function which converts the received ModBus
-            variable value to on/off state.
+            variable value to bool value.
         description: homeassistant.components.binary_sensor.BinarySensorEntityDescription
             The binary sensor description.
         '''
@@ -56,16 +56,15 @@ class EasyControlBinarySensor(BinarySensorEntity):
         self._variable = variable_name
         self._converter = converter
         self._size = variable_size
-        self._state = 'unavailable'
 
     async def async_update(self):
         '''
         Updates the sensor value.
         '''
-        value = self._controller.get_variable(
+        self._attr_is_on = self._controller.get_variable(
             self._variable, self._size, self._converter
         )
-        self._state = 'unavailable' if value is None else value
+        self._attr_available = self._attr_is_on is not None
 
     @property
     def unique_id(self):
@@ -80,13 +79,6 @@ class EasyControlBinarySensor(BinarySensorEntity):
         Gets the device information.
         '''
         return get_device_info(self._controller)
-
-    @property
-    def state(self):
-        '''
-        Gets the state of the sensor.
-        '''
-        return self._state
 
 
 async def async_setup_entry(
@@ -120,7 +112,7 @@ async def async_setup_entry(
             controller,
             VARIABLE_BYPASS,
             8,
-            lambda x: 'on' if int(x) == 1 else 'off',
+            lambda x: int(x) == 1,
             BinarySensorEntityDescription(
                 key="bypass",
                 name=f'{controller.device_name} bypass',
@@ -132,8 +124,7 @@ async def async_setup_entry(
             controller,
             VARIABLE_INFOS,
             32,
-            lambda x: 'on' if (
-                int(x) & INFO_FILTER_CHANGE_FLAG) == INFO_FILTER_CHANGE_FLAG else 'off',
+            lambda x: (int(x) & INFO_FILTER_CHANGE_FLAG) == INFO_FILTER_CHANGE_FLAG,
             BinarySensorEntityDescription(
                 key="filter_change",
                 name=f'{controller.device_name} filter change',
