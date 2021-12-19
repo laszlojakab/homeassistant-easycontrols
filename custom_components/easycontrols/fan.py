@@ -46,15 +46,7 @@ class EasyControlsFanDevice(FanEntity):
         self._fan_stage = None
         self._supply_air_rpm = None
         self._extract_air_rpm = None
-        self._attributes = {}
-
-
-    @property
-    def device_state_attributes(self):
-        '''
-        Get the attributes of the fan.
-        '''
-        return self._attributes
+        self._attr_extra_state_attributes = {}
 
     @property
     def unique_id(self):
@@ -207,7 +199,7 @@ class EasyControlsFanDevice(FanEntity):
 
         operation_mode = MODE_AUTO if operation_mode == 0 else MODE_MANUAL
 
-        self._attributes = {
+        self._attr_extra_state_attributes = {
             'preset_mode': preset_mode,
             'operation_mode': operation_mode
         }
