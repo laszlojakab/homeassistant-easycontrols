@@ -59,7 +59,6 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
             native_unit_of_measurement='m³/h'
         )
         self._controller = controller
-        self._state = 'unavailable'
 
     async def async_update(self) -> None:
         '''
@@ -70,9 +69,12 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         )
 
         if percentage_fan_speed is None:
-            self._state = 'unavailable'
+            self._attr_native_value = None
         else:
-            self._state = self._controller.maximum_air_flow * percentage_fan_speed / 100.0
+            self._attr_native_value = self._controller.maximum_air_flow * \
+                percentage_fan_speed / 100.0
+
+        self._attr_available = self._attr_native_value is not None
 
     @property
     def unique_id(self) -> str:
@@ -87,13 +89,6 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         Gets the device information.
         '''
         return get_device_info(self._controller)
-
-    @property
-    def state(self) -> float:
-        '''
-        Gets the state of the sensor.
-        '''
-        return self._state
 
 
 class EasyControlsEfficiencySensor(SensorEntity):
@@ -119,7 +114,6 @@ class EasyControlsEfficiencySensor(SensorEntity):
             native_unit_of_measurement='%'
         )
         self._controller = controller
-        self._state = 'unavailable'
 
     async def async_update(self) -> None:
         '''
@@ -138,20 +132,21 @@ class EasyControlsEfficiencySensor(SensorEntity):
         if extract_air_temperature is None or \
            outside_air_temperature is None or \
            supply_air_temperature is None:
-            self._state = 'unavailable'
-            return
-
-        if abs(extract_air_temperature - outside_air_temperature) > 0.5:
-            self._state = abs(
-                round(
-                    (supply_air_temperature - outside_air_temperature)
-                    / (extract_air_temperature - outside_air_temperature)
-                    * 100,
-                    2,
-                )
-            )
+            self._attr_native_value = None
         else:
-            self._state = 0
+            if abs(extract_air_temperature - outside_air_temperature) > 0.5:
+                self._attr_native_value = abs(
+                    round(
+                        (supply_air_temperature - outside_air_temperature)
+                        / (extract_air_temperature - outside_air_temperature)
+                        * 100,
+                        2,
+                    )
+                )
+            else:
+                self._attr_native_value = 0
+
+        self._attr_available = self._attr_native_value is not None
 
     @property
     def unique_id(self) -> str:
@@ -166,13 +161,6 @@ class EasyControlsEfficiencySensor(SensorEntity):
         Gets the device information.
         '''
         return get_device_info(self._controller)
-
-    @property
-    def state(self) -> int:
-        '''
-        Gets the state of the sensor.
-        '''
-        return self._state
 
 
 class EasyControlFlagSensor(SensorEntity):
@@ -206,7 +194,6 @@ class EasyControlFlagSensor(SensorEntity):
         self.entity_description = description
         self._controller = controller
         self._variable = variable_name
-        self._state = 'unavailable'
         self._flags = flags
 
     async def async_update(self) -> None:
@@ -216,15 +203,16 @@ class EasyControlFlagSensor(SensorEntity):
         value = self._controller.get_variable(
             self._variable, 32, int
         )
-        self._state = 'unavailable' if value is None else self._get_string(
-            value
-        )
+        self._attr_native_value = self._get_string(value)
+        self._attr_available = self._attr_native_value is not None
 
     def _get_string(self, value: int) -> str:
         '''
         Converts the specified integer to its
         text representation
         '''
+        if value is None:
+            return None
         string = ''
         if value != 0:
             for item in self._flags.items():
@@ -248,13 +236,6 @@ class EasyControlFlagSensor(SensorEntity):
         Gets the device information.
         '''
         return get_device_info(self._controller)
-
-    @property
-    def state(self) -> str:
-        '''
-        Gets the state of the sensor.
-        '''
-        return self._state
 
 
 class EasyControlsSensor(SensorEntity):
@@ -293,17 +274,17 @@ class EasyControlsSensor(SensorEntity):
         self._variable_name = variable_name
         self._converter = converter
         self._variable_size = variable_size
-        self._state = 'unavailable'
 
     async def async_update(self):
         '''
         Updates the sensor value.
         '''
-        self._state = self._controller.get_variable(
+        self._attr_native_value = self._controller.get_variable(
             self._variable_name,
             self._variable_size,
             self._converter
         )
+        self._attr_available = self._attr_native_value is not None
 
     @property
     def unique_id(self) -> str:
@@ -318,13 +299,6 @@ class EasyControlsSensor(SensorEntity):
         Gets the device information.
         '''
         return get_device_info(self._controller)
-
-    @property
-    def state(self) -> Any:
-        '''
-        Gets the state of the sensor.
-        '''
-        return self._state
 
 
 class EasyControlsVersionSensor(SensorEntity):
@@ -369,12 +343,12 @@ class EasyControlsVersionSensor(SensorEntity):
         '''
         return get_device_info(self._controller)
 
-    @property
-    def state(self) -> str:
+    async def async_update(self):
         '''
-        Gets the state of the sensor.
+        Updates the sensor value.
         '''
-        return self._controller.version or 'unavailable'
+        self._attr_native_value = self._controller.version
+        self._attr_available = self._attr_native_value is not None
 
 
 async def async_setup_entry(
