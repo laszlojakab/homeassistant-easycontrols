@@ -56,7 +56,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
             name=f'{controller.device_name} airflow rate',
             state_class=STATE_CLASS_MEASUREMENT,
             icon='mdi:air-filter',
-            unit_of_measurement='m³/h'
+            native_unit_of_measurement='m³/h'
         )
         self._controller = controller
         self._state = 'unavailable'
@@ -116,7 +116,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
             name=f'{controller.device_name} heat recovery efficiency',
             state_class=STATE_CLASS_MEASUREMENT,
             icon='mdi:percent',
-            unit_of_measurement='%'
+            native_unit_of_measurement='%'
         )
         self._controller = controller
         self._state = 'unavailable'
@@ -417,7 +417,7 @@ async def async_setup_entry(
                 key='fan_speed',
                 name=f'{controller.device_name} fan speed percentage',
                 icon='mdi:air-conditioner',
-                unit_of_measurement='%',
+                native_unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -430,7 +430,7 @@ async def async_setup_entry(
                 key='fan_stage',
                 name=f'{controller.device_name} fan stage',
                 icon='mdi:air-conditioner',
-                unit_of_measurement=' ',
+                native_unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -443,7 +443,7 @@ async def async_setup_entry(
                 key='extract_air_fan_stage',
                 name=f'{controller.device_name} extract air fan stage',
                 icon='mdi:air-conditioner',
-                unit_of_measurement=' ',
+                native_unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -456,7 +456,7 @@ async def async_setup_entry(
                 key='supply_air_fan_stage',
                 name=f'{controller.device_name} supply air fan stage',
                 icon='mdi:air-conditioner',
-                unit_of_measurement=' ',
+                native_unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -469,7 +469,7 @@ async def async_setup_entry(
                 key='outside_air_temperature',
                 name=f'{controller.device_name} outside air temperature',
                 icon='mdi:thermometer',
-                unit_of_measurement='°C',
+                native_unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
                 state_class=STATE_CLASS_MEASUREMENT
             )
@@ -483,7 +483,7 @@ async def async_setup_entry(
                 key='supply_air_temperature',
                 name=f'{controller.device_name} supply air temperature',
                 icon='mdi:thermometer',
-                unit_of_measurement='°C',
+                native_unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
                 state_class=STATE_CLASS_MEASUREMENT
             )
@@ -497,7 +497,7 @@ async def async_setup_entry(
                 key='extract_air_temperature',
                 name=f'{controller.device_name} extract air temperature',
                 icon='mdi:thermometer',
-                unit_of_measurement='°C',
+                native_unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
                 state_class=STATE_CLASS_MEASUREMENT
             )
@@ -511,7 +511,7 @@ async def async_setup_entry(
                 key='outgoing_air_temperature',
                 name=f'{controller.device_name} outgoing air temperature',
                 icon='mdi:thermometer',
-                unit_of_measurement='°C',
+                native_unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
                 state_class=STATE_CLASS_MEASUREMENT
             )
@@ -525,7 +525,7 @@ async def async_setup_entry(
                 key='extract_air_rpm',
                 name=f'{controller.device_name} extract air rpm',
                 icon='mdi:rotate-3d-variant',
-                unit_of_measurement='rpm',
+                native_unit_of_measurement='rpm',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -538,7 +538,7 @@ async def async_setup_entry(
                 key='supply_air_rpm',
                 name=f'{controller.device_name} supply air rpm',
                 icon='mdi:rotate-3d-variant',
-                unit_of_measurement='rpm',
+                native_unit_of_measurement='rpm',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -551,7 +551,7 @@ async def async_setup_entry(
                 key='extract_air_relative_humidity',
                 name=f'{controller.device_name} extract air relative humidity',
                 icon='mdi:water-percent',
-                unit_of_measurement='%',
+                native_unit_of_measurement='%',
                 device_class=DEVICE_CLASS_HUMIDITY,
                 state_class=STATE_CLASS_MEASUREMENT
             )
@@ -565,7 +565,7 @@ async def async_setup_entry(
                 key='party_mode_remaining_time',
                 name=f'{controller.device_name} party mode remaining time',
                 icon='mdi:clock',
-                unit_of_measurement='min'
+                native_unit_of_measurement='min'
             )
         ),
         EasyControlsSensor(
@@ -577,7 +577,7 @@ async def async_setup_entry(
                 key='supply_air_fan_operation_hours',
                 name=f'{controller.device_name} supply air fan operation hours',
                 icon='mdi:history',
-                unit_of_measurement='h',
+                native_unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
             )
         ),
@@ -590,7 +590,7 @@ async def async_setup_entry(
                 key='extract_air_fan_operation_hours',
                 name=f'{controller.device_name} extract air fan operation hours',
                 icon='mdi:history',
-                unit_of_measurement='h',
+                native_unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
             )
         ),
@@ -603,7 +603,7 @@ async def async_setup_entry(
                 key='preheater_operation_hours',
                 name=f'{controller.device_name} preheater operation hours',
                 icon='mdi:history',
-                unit_of_measurement='h',
+                native_unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
             )
         ),
@@ -616,7 +616,7 @@ async def async_setup_entry(
                 key='preheater_percentage',
                 name=f'{controller.device_name} preheater percentage',
                 icon='mdi:thermometer-lines',
-                unit_of_measurement='%',
+                native_unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
@@ -629,7 +629,7 @@ async def async_setup_entry(
                 key='after_heater_operation_hours',
                 name=f'{controller.device_name} afterheater operation hours',
                 icon='mdi:history',
-                unit_of_measurement='h',
+                native_unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
             )
         ),
@@ -642,7 +642,7 @@ async def async_setup_entry(
                 key='afterheater_percentage',
                 name=f'{controller.device_name} afterheater percentage',
                 icon='mdi:thermometer-lines',
-                unit_of_measurement='%',
+                native_unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
             )
         ),
