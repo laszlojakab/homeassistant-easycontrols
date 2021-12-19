@@ -4,7 +4,7 @@ Fan entity support for Helios Easy Controls device.
 '''
 import logging
 
-from homeassistant.components.fan import FanEntity
+from homeassistant.components.fan import FanEntity, FanEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.helpers import device_registry
@@ -38,19 +38,16 @@ class EasyControlFanDevice(FanEntity):
     '''
 
     def __init__(self, controller: ThreadSafeController, name: str):
+        self.entity_description = FanEntityDescription(
+            key="fan",
+            name=name
+        )
         self._controller = controller
-        self._name = name
         self._fan_stage = None
         self._supply_air_rpm = None
         self._extract_air_rpm = None
         self._attributes = {}
 
-    @property
-    def name(self) -> str:
-        '''
-        Gets the name of the fan.
-        '''
-        return self._name
 
     @property
     def device_state_attributes(self):
@@ -74,7 +71,7 @@ class EasyControlFanDevice(FanEntity):
         return {
             'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
             'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._name,
+            'name': self.name,
             'manufacturer': 'Helios',
             'model': self._controller.model,
             'sw_version': self._controller.version

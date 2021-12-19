@@ -4,11 +4,14 @@ The binary sensor module for Helios Easy Controls integration.
 '''
 import logging
 from typing import Callable
-from homeassistant.config_entries import ConfigEntry
 
+from homeassistant.components.binary_sensor import (
+    DEVICE_CLASS_OPENING, DEVICE_CLASS_PROBLEM, BinarySensorEntity,
+    BinarySensorEntityDescription)
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.helpers import device_registry
-from homeassistant.helpers.entity import DeviceInfo, Entity
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
@@ -19,7 +22,7 @@ from .threadsafe_controller import ThreadSafeController
 _LOGGER = logging.getLogger(__name__)
 
 
-class EasyControlBinarySensor(Entity):
+class EasyControlBinarySensor(BinarySensorEntity):
     '''
     Represents a ModBus variable as a binary sensor.
     '''
@@ -30,10 +33,8 @@ class EasyControlBinarySensor(Entity):
         variable_name: str,
         variable_size: int,
         converter: Callable[[str], str],
-        name: str,
         device_name: str,
-        icon: str,
-        device_class: str
+        description: BinarySensorEntityDescription
     ):
         '''
         Initialize a new instance of EasyControlsBinarySensor class.
@@ -49,23 +50,17 @@ class EasyControlBinarySensor(Entity):
         converter: Callable[[str], Any]
             The converter function which converts the received ModBus
             variable value to on/off state.
-        name: str
-            The name of the sensor.
         device_name: str
             The device name.
-        icon: str
-            The icon of the sensor.
-        device_class: str
-            The device class of the sensor.
+        description: homeassistant.components.binary_sensor.BinarySensorEntityDescription
+            The binary sensor description.
         '''
+        self.entity_description = description
         self._controller = controller
         self._variable = variable_name
         self._converter = converter
         self._size = variable_size
-        self._name = name
         self._device_name = device_name
-        self._icon = icon
-        self._device_class = device_class
         self._state = 'unavailable'
 
     async def async_update(self):
@@ -78,18 +73,11 @@ class EasyControlBinarySensor(Entity):
         self._state = 'unavailable' if value is None else value
 
     @property
-    def device_class(self):
-        '''
-        Gets the device class of the sensor.
-        '''
-        return self._device_class
-
-    @property
     def unique_id(self):
         '''
         Gets the unique ID of the sensor.
         '''
-        return self._controller.mac + self._name
+        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -106,32 +94,11 @@ class EasyControlBinarySensor(Entity):
         }
 
     @property
-    def should_poll(self):
-        '''
-        Gets the value indicates whether the sensor should be polled.
-        '''
-        return True
-
-    @property
-    def name(self):
-        '''
-        Gets the name of the sensor.
-        '''
-        return self._name
-
-    @property
     def state(self):
         '''
         Gets the state of the sensor.
         '''
         return self._state
-
-    @property
-    def icon(self):
-        '''
-        Gets the icon of the sensor.
-        '''
-        return self._icon
 
 
 async def async_setup_entry(
@@ -158,7 +125,7 @@ async def async_setup_entry(
     '''
     _LOGGER.info('Setting up Helios EasyControls binary sensors.')
 
-    name = config_entry.data[CONF_NAME]
+    device_name = config_entry.data[CONF_NAME]
     controller = hass.data[DOMAIN][DATA_CONTROLLER][config_entry.data[CONF_HOST]]
 
     async_add_entities([
@@ -167,10 +134,13 @@ async def async_setup_entry(
             VARIABLE_BYPASS,
             8,
             lambda x: 'on' if int(x) == 1 else 'off',
-            f'{name} bypass',
-            name,
-            'mdi:delta',
-            'opening'
+            device_name,
+            BinarySensorEntityDescription(
+                key="bypass",
+                name=f'{device_name} bypass',
+                icon='mdi:delta',
+                device_class=DEVICE_CLASS_OPENING
+            ),
         ),
         EasyControlBinarySensor(
             controller,
@@ -178,10 +148,13 @@ async def async_setup_entry(
             32,
             lambda x: 'on' if (
                 int(x) & INFO_FILTER_CHANGE_FLAG) == INFO_FILTER_CHANGE_FLAG else 'off',
-            f'{name} filter change',
-            name,
-            'mdi:air-filter',
-            None
+            device_name,
+            BinarySensorEntityDescription(
+                key="filter_change",
+                name=f'{device_name} filter change',
+                icon='mdi:air-filter',
+                device_class=DEVICE_CLASS_PROBLEM
+            )
         )
     ])
 
