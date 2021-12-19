@@ -8,14 +8,14 @@ from homeassistant.components.sensor import (STATE_CLASS_MEASUREMENT,
                                              SensorEntity,
                                              SensorEntityDescription)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (CONF_HOST, CONF_NAME, DEVICE_CLASS_HUMIDITY,
+from homeassistant.const import (CONF_MAC, DEVICE_CLASS_HUMIDITY,
                                  DEVICE_CLASS_TEMPERATURE)
-from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
-from .const import (DATA_CONTROLLER, DOMAIN, ERRORS, INFOS, VARIABLE_ERRORS,
+from . import get_controller, get_device_info
+from .const import (ERRORS, INFOS, VARIABLE_ERRORS,
                     VARIABLE_EXTRACT_AIR_FAN_STAGE, VARIABLE_EXTRACT_AIR_RPM,
                     VARIABLE_FAN_STAGE, VARIABLE_HUMIDITY_EXTRACT_AIR,
                     VARIABLE_INFOS, VARIABLE_OPERATION_HOURS_AFTERHEATER,
@@ -42,7 +42,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
     Represents a sensor which provides current airflow rate.
     '''
 
-    def __init__(self, controller: ThreadSafeController, device_name: str):
+    def __init__(self, controller: ThreadSafeController):
         '''
         Initialize a new instance of EasyControlsAirFlowRateSensor class.
 
@@ -50,18 +50,15 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         ----------
         controller: ThreadSafeController
             The thread safe Helios Easy Controls controller instance.
-        device_name: str
-            The name of the device.
         '''
         self.entity_description = SensorEntityDescription(
             key='air_flow_rate',
-            name=f'{device_name} airflow rate',
+            name=f'{controller.device_name} airflow rate',
             state_class=STATE_CLASS_MEASUREMENT,
             icon='mdi:air-filter',
             unit_of_measurement='m³/h'
         )
         self._controller = controller
-        self._device_name = device_name
         self._state = 'unavailable'
 
     async def async_update(self) -> None:
@@ -89,14 +86,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._device_name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def state(self) -> float:
@@ -112,7 +102,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
     For more details: https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     '''
 
-    def __init__(self, controller: ThreadSafeController, device_name: str):
+    def __init__(self, controller: ThreadSafeController):
         '''
         Initialize a new instance of EasyControlsEfficiencySensor class.
 
@@ -120,18 +110,15 @@ class EasyControlsEfficiencySensor(SensorEntity):
         ----------
         controller: ThreadSafeController
             The thread safe Helios Easy Controls controller.
-        device_name: str
-            The name of the device.
         '''
         self.entity_description = SensorEntityDescription(
             key='heat_recover_efficiency',
-            name=f'{device_name} heat recovery efficiency',
+            name=f'{controller.device_name} heat recovery efficiency',
             state_class=STATE_CLASS_MEASUREMENT,
             icon='mdi:percent',
             unit_of_measurement='%'
         )
         self._controller = controller
-        self._device_name = device_name
         self._state = 'unavailable'
 
     async def async_update(self) -> None:
@@ -178,14 +165,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._device_name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def state(self) -> int:
@@ -207,7 +187,6 @@ class EasyControlFlagSensor(SensorEntity):
         controller: ThreadSafeController,
         variable_name: str,
         flags: Dict[int, str],
-        device_name: str,
         description: SensorEntityDescription
     ):
         '''
@@ -221,15 +200,12 @@ class EasyControlFlagSensor(SensorEntity):
         flags: Dict[int, str]
             The dictionary which holds the flag value as the key
             and the related text as the value.
-        device_name: str
-            The Helios device name.
         description: homeassistant.components.sensor.SensorEntityDescription
             The sensor description.
         '''
         self.entity_description = description
         self._controller = controller
         self._variable = variable_name
-        self._device_name = device_name
         self._state = 'unavailable'
         self._flags = flags
 
@@ -271,14 +247,7 @@ class EasyControlFlagSensor(SensorEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._device_name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def state(self) -> str:
@@ -300,7 +269,6 @@ class EasyControlsSensor(SensorEntity):
         variable_name: str,
         variable_size: int,
         converter: Callable[[str], Any],
-        device_name: str,
         description: SensorEntityDescription
     ):
         '''
@@ -317,8 +285,6 @@ class EasyControlsSensor(SensorEntity):
         converter: Callable[[str], Any]
             The converter function which converts the string value
             received from ModBus to sensor value.
-        device_name: str
-            The name of the device.
         description: homeassistant.components.sensor.SensorEntityDescription
             The sensor description.
         '''
@@ -327,7 +293,6 @@ class EasyControlsSensor(SensorEntity):
         self._variable_name = variable_name
         self._converter = converter
         self._variable_size = variable_size
-        self._device_name = device_name
         self._state = 'unavailable'
 
     async def async_update(self):
@@ -352,14 +317,7 @@ class EasyControlsSensor(SensorEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._device_name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def state(self) -> Any:
@@ -377,8 +335,7 @@ class EasyControlsVersionSensor(SensorEntity):
     def __init__(
         self,
         controller: ThreadSafeController,
-        name: str,
-        device_name: str
+        name: str
     ):
         '''
         Initialize a new instance of EasyControlVersionSensor class.
@@ -389,8 +346,6 @@ class EasyControlsVersionSensor(SensorEntity):
             The thread safe Helios Easy Controls controller
         name: str
             The name of the sensor.
-        device_name: str
-            The name of the device.
         '''
         self.entity_description = SensorEntityDescription(
             key='version',
@@ -399,7 +354,6 @@ class EasyControlsVersionSensor(SensorEntity):
         )
 
         self._controller = controller
-        self._device_name = device_name
 
     @property
     def unique_id(self) -> str:
@@ -413,14 +367,7 @@ class EasyControlsVersionSensor(SensorEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self._device_name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def state(self) -> str:
@@ -454,24 +401,21 @@ async def async_setup_entry(
     '''
     _LOGGER.info('Setting up Helios EasyControls sensors.')
 
-    device_name = config_entry.data[CONF_NAME]
-    controller = hass.data[DOMAIN][DATA_CONTROLLER][config_entry.data[CONF_HOST]]
+    controller = get_controller(hass, config_entry.data[CONF_MAC])
 
     async_add_entities([
         EasyControlsVersionSensor(
             controller,
-            f'{device_name} software version',
-            device_name
+            f'{controller.device_name} software version'
         ),
         EasyControlsSensor(
             controller,
             VARIABLE_PERCENTAGE_FAN_SPEED,
             8,
             float,
-            device_name,
             SensorEntityDescription(
                 key='fan_speed',
-                name=f'{device_name} fan speed percentage',
+                name=f'{controller.device_name} fan speed percentage',
                 icon='mdi:air-conditioner',
                 unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -482,10 +426,9 @@ async def async_setup_entry(
             VARIABLE_FAN_STAGE,
             1,
             int,
-            device_name,
             SensorEntityDescription(
                 key='fan_stage',
-                name=f'{device_name} fan stage',
+                name=f'{controller.device_name} fan stage',
                 icon='mdi:air-conditioner',
                 unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -496,10 +439,9 @@ async def async_setup_entry(
             VARIABLE_EXTRACT_AIR_FAN_STAGE,
             1,
             int,
-            device_name,
             SensorEntityDescription(
                 key='extract_air_fan_stage',
-                name=f'{device_name} extract air fan stage',
+                name=f'{controller.device_name} extract air fan stage',
                 icon='mdi:air-conditioner',
                 unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -510,10 +452,9 @@ async def async_setup_entry(
             VARIABLE_SUPPLY_AIR_FAN_STAGE,
             1,
             int,
-            device_name,
             SensorEntityDescription(
                 key='supply_air_fan_stage',
-                name=f'{device_name} supply air fan stage',
+                name=f'{controller.device_name} supply air fan stage',
                 icon='mdi:air-conditioner',
                 unit_of_measurement=' ',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -524,10 +465,9 @@ async def async_setup_entry(
             VARIABLE_TEMPERATURE_OUTSIDE_AIR,
             8,
             float,
-            device_name,
             SensorEntityDescription(
                 key='outside_air_temperature',
-                name=f'{device_name} outside air temperature',
+                name=f'{controller.device_name} outside air temperature',
                 icon='mdi:thermometer',
                 unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
@@ -539,10 +479,9 @@ async def async_setup_entry(
             VARIABLE_TEMPERATURE_SUPPLY_AIR,
             8,
             float,
-            device_name,
             SensorEntityDescription(
                 key='supply_air_temperature',
-                name=f'{device_name} supply air temperature',
+                name=f'{controller.device_name} supply air temperature',
                 icon='mdi:thermometer',
                 unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
@@ -554,10 +493,9 @@ async def async_setup_entry(
             VARIABLE_TEMPERATURE_EXTRACT_AIR,
             8,
             float,
-            device_name,
             SensorEntityDescription(
                 key='extract_air_temperature',
-                name=f'{device_name} extract air temperature',
+                name=f'{controller.device_name} extract air temperature',
                 icon='mdi:thermometer',
                 unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
@@ -569,10 +507,9 @@ async def async_setup_entry(
             VARIABLE_TEMPERATURE_OUTGOING_AIR,
             8,
             float,
-            device_name,
             SensorEntityDescription(
                 key='outgoing_air_temperature',
-                name=f'{device_name} outgoing air temperature',
+                name=f'{controller.device_name} outgoing air temperature',
                 icon='mdi:thermometer',
                 unit_of_measurement='°C',
                 device_class=DEVICE_CLASS_TEMPERATURE,
@@ -584,10 +521,9 @@ async def async_setup_entry(
             VARIABLE_EXTRACT_AIR_RPM,
             8,
             int,
-            device_name,
             SensorEntityDescription(
                 key='extract_air_rpm',
-                name=f'{device_name} extract air rpm',
+                name=f'{controller.device_name} extract air rpm',
                 icon='mdi:rotate-3d-variant',
                 unit_of_measurement='rpm',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -598,10 +534,9 @@ async def async_setup_entry(
             VARIABLE_SUPPLY_AIR_RPM,
             8,
             int,
-            device_name,
             SensorEntityDescription(
                 key='supply_air_rpm',
-                name=f'{device_name} supply air rpm',
+                name=f'{controller.device_name} supply air rpm',
                 icon='mdi:rotate-3d-variant',
                 unit_of_measurement='rpm',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -612,10 +547,9 @@ async def async_setup_entry(
             VARIABLE_HUMIDITY_EXTRACT_AIR,
             8,
             int,
-            device_name,
             SensorEntityDescription(
                 key='extract_air_relative_humidity',
-                name=f'{device_name} extract air relative humidity',
+                name=f'{controller.device_name} extract air relative humidity',
                 icon='mdi:water-percent',
                 unit_of_measurement='%',
                 device_class=DEVICE_CLASS_HUMIDITY,
@@ -627,10 +561,9 @@ async def async_setup_entry(
             VARIABLE_PARTY_MODE_REMAINING_TIME,
             8,
             int,
-            device_name,
             SensorEntityDescription(
                 key='party_mode_remaining_time',
-                name=f'{device_name} party mode remaining time',
+                name=f'{controller.device_name} party mode remaining time',
                 icon='mdi:clock',
                 unit_of_measurement='min'
             )
@@ -640,10 +573,9 @@ async def async_setup_entry(
             VARIABLE_OPERATION_HOURS_SUPPLY_AIR_FAN,
             10,
             lambda x: round(float(x) / 60.0, 2),
-            device_name,
             SensorEntityDescription(
                 key='supply_air_fan_operation_hours',
-                name=f'{device_name} supply air fan operation hours',
+                name=f'{controller.device_name} supply air fan operation hours',
                 icon='mdi:history',
                 unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
@@ -654,10 +586,9 @@ async def async_setup_entry(
             VARIABLE_OPERATION_HOURS_EXTRACT_AIR_FAN,
             10,
             lambda x: round(float(x) / 60.0, 2),
-            device_name,
             SensorEntityDescription(
                 key='extract_air_fan_operation_hours',
-                name=f'{device_name} extract air fan operation hours',
+                name=f'{controller.device_name} extract air fan operation hours',
                 icon='mdi:history',
                 unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
@@ -668,10 +599,9 @@ async def async_setup_entry(
             VARIABLE_OPERATION_HOURS_PREHEATER,
             10,
             lambda x: round(float(x) / 60.0, 2),
-            device_name,
             SensorEntityDescription(
                 key='preheater_operation_hours',
-                name=f'{device_name} preheater operation hours',
+                name=f'{controller.device_name} preheater operation hours',
                 icon='mdi:history',
                 unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
@@ -682,10 +612,9 @@ async def async_setup_entry(
             VARIABLE_PERCENTAGE_PREHEATER,
             4,
             float,
-            device_name,
             SensorEntityDescription(
                 key='preheater_percentage',
-                name=f'{device_name} preheater percentage',
+                name=f'{controller.device_name} preheater percentage',
                 icon='mdi:thermometer-lines',
                 unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -696,10 +625,9 @@ async def async_setup_entry(
             VARIABLE_OPERATION_HOURS_AFTERHEATER,
             10,
             lambda x: round(float(x) / 60.0, 2),
-            device_name,
             SensorEntityDescription(
                 key='after_heater_operation_hours',
-                name=f'{device_name} afterheater operation hours',
+                name=f'{controller.device_name} afterheater operation hours',
                 icon='mdi:history',
                 unit_of_measurement='h',
                 state_class=STATE_CLASS_TOTAL_INCREASING
@@ -710,10 +638,9 @@ async def async_setup_entry(
             VARIABLE_PERCENTAGE_AFTERHEATER,
             4,
             float,
-            device_name,
             SensorEntityDescription(
                 key='afterheater_percentage',
-                name=f'{device_name} afterheater percentage',
+                name=f'{controller.device_name} afterheater percentage',
                 icon='mdi:thermometer-lines',
                 unit_of_measurement='%',
                 state_class=STATE_CLASS_MEASUREMENT
@@ -723,10 +650,9 @@ async def async_setup_entry(
             controller,
             VARIABLE_ERRORS,
             ERRORS,
-            device_name,
             SensorEntityDescription(
                 key='ERRORS',
-                name=f'{device_name} errors',
+                name=f'{controller.device_name} errors',
                 icon='mdi:alert-circle'
             )
         ),
@@ -734,10 +660,9 @@ async def async_setup_entry(
             controller,
             VARIABLE_WARNINGS,
             WARNINGS,
-            device_name,
             SensorEntityDescription(
                 key='WARNINGS',
-                name=f'{device_name} warnings',
+                name=f'{controller.device_name} warnings',
                 icon='mdi:alert-circle-outline'
             )
         ),
@@ -745,20 +670,17 @@ async def async_setup_entry(
             controller,
             VARIABLE_INFOS,
             INFOS,
-            device_name,
             SensorEntityDescription(
                 key='INFORMATION',
-                name=f'{device_name} information',
+                name=f'{controller.device_name} information',
                 icon='mdi:information-outline'
             )
         ),
         EasyControlsAirFlowRateSensor(
-            controller,
-            device_name
+            controller
         ),
         EasyControlsEfficiencySensor(
-            controller,
-            device_name
+            controller
         )
     ])
 

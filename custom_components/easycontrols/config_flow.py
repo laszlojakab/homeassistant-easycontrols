@@ -2,14 +2,13 @@
 import logging
 from typing import Any, Dict
 
-from eazyctrl import EazyController
 import voluptuous as vol
+from eazyctrl import EazyController
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import (CONF_MAC_ADDRESS, DOMAIN, VARIABLE_ARTICLE_DESCRIPTION,
-                    VARIABLE_MAC_ADDRESS)
+from .const import DOMAIN, VARIABLE_ARTICLE_DESCRIPTION, VARIABLE_MAC_ADDRESS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data = {
                 CONF_NAME: user_info[CONF_NAME],
                 CONF_HOST: user_info[CONF_HOST],
-                CONF_MAC_ADDRESS: mac_address
+                CONF_MAC: mac_address
             }
 
             return self.async_create_entry(

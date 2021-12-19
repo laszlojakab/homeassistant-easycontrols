@@ -6,18 +6,18 @@ import logging
 
 from homeassistant.components.fan import FanEntity, FanEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_NAME
-from homeassistant.helpers import device_registry
+from homeassistant.const import CONF_HOST, CONF_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
-from .const import (DATA_CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL,
-                    PRESET_HOLIDAY_CONSTANT, PRESET_HOLIDAY_INTERVAL,
-                    PRESET_NOT_SET, PRESET_PARTY, PRESET_STANDBY,
-                    VARIABLE_EXTRACT_AIR_RPM, VARIABLE_FAN_STAGE,
-                    VARIABLE_HOLIDAY_MODE, VARIABLE_OPERATING_MODE,
-                    VARIABLE_PARTY_MODE, VARIABLE_PARTY_MODE_DURATION,
+from . import get_controller, get_device_info
+from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
+                    PRESET_HOLIDAY_INTERVAL, PRESET_NOT_SET, PRESET_PARTY,
+                    PRESET_STANDBY, VARIABLE_EXTRACT_AIR_RPM,
+                    VARIABLE_FAN_STAGE, VARIABLE_HOLIDAY_MODE,
+                    VARIABLE_OPERATING_MODE, VARIABLE_PARTY_MODE,
+                    VARIABLE_PARTY_MODE_DURATION,
                     VARIABLE_PARTY_MODE_FAN_STAGE, VARIABLE_STANDBY_MODE,
                     VARIABLE_SUPPLY_AIR_RPM)
 from .threadsafe_controller import ThreadSafeController
@@ -32,15 +32,15 @@ SPEED_MAXIMUM_FAN_SPEED = 'maximum'
 _LOGGER = logging.getLogger(__name__)
 
 
-class EasyControlFanDevice(FanEntity):
+class EasyControlsFanDevice(FanEntity):
     '''
     Represents a fan entity which controls the Helios device.
     '''
 
-    def __init__(self, controller: ThreadSafeController, name: str):
+    def __init__(self, controller: ThreadSafeController):
         self.entity_description = FanEntityDescription(
             key="fan",
-            name=name
+            name=controller.device_name
         )
         self._controller = controller
         self._fan_stage = None
@@ -68,14 +68,7 @@ class EasyControlFanDevice(FanEntity):
         '''
         Gets the device information.
         '''
-        return {
-            'connections': {(device_registry.CONNECTION_NETWORK_MAC, self._controller.mac)},
-            'identifiers': {(DOMAIN, self._controller.serial_number)},
-            'name': self.name,
-            'manufacturer': 'Helios',
-            'model': self._controller.model,
-            'sw_version': self._controller.version
-        }
+        return get_device_info(self._controller)
 
     @property
     def supported_features(self) -> int:
@@ -244,9 +237,8 @@ async def async_setup_entry(
     '''
     _LOGGER.info('Setting up Helios EasyControls fan device.')
 
-    name = config_entry.data[CONF_NAME]
-    controller = hass.data[DOMAIN][DATA_CONTROLLER][config_entry.data[CONF_HOST]]
-    fan = EasyControlFanDevice(controller, name)
+    controller = get_controller(hass, config_entry.data[CONF_MAC])
+    fan = EasyControlsFanDevice(controller)
 
     async_add_entities([fan])
 

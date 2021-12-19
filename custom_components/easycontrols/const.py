@@ -4,8 +4,6 @@ DOMAIN = 'easycontrols'
 
 DATA_CONTROLLER = 'controller'
 
-CONF_MAC_ADDRESS = 'mac'
-
 MODE_MANUAL = 'manual'
 MODE_AUTO = 'auto'
 
