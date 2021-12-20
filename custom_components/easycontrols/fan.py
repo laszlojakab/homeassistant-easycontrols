@@ -6,7 +6,7 @@ import logging
 
 from homeassistant.components.fan import FanEntity, FanEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_MAC
+from homeassistant.const import CONF_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
