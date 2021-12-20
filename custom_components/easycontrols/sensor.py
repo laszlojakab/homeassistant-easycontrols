@@ -59,6 +59,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
             native_unit_of_measurement='m³/h'
         )
         self._controller = controller
+        self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self) -> None:
         '''
@@ -75,13 +76,6 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
                 percentage_fan_speed / 100.0
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def unique_id(self) -> str:
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -114,6 +108,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
             native_unit_of_measurement='%'
         )
         self._controller = controller
+        self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self) -> None:
         '''
@@ -147,13 +142,6 @@ class EasyControlsEfficiencySensor(SensorEntity):
                 self._attr_native_value = 0
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def unique_id(self) -> str:
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -195,6 +183,7 @@ class EasyControlFlagSensor(SensorEntity):
         self._controller = controller
         self._variable = variable_name
         self._flags = flags
+        self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self) -> None:
         '''
@@ -223,12 +212,6 @@ class EasyControlFlagSensor(SensorEntity):
                     string += item[1]
         return string
 
-    @property
-    def unique_id(self) -> str:
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -274,6 +257,7 @@ class EasyControlsSensor(SensorEntity):
         self._variable_name = variable_name
         self._converter = converter
         self._variable_size = variable_size
+        self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self):
         '''
@@ -285,13 +269,6 @@ class EasyControlsSensor(SensorEntity):
             self._converter
         )
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def unique_id(self) -> str:
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -328,13 +305,7 @@ class EasyControlsVersionSensor(SensorEntity):
         )
 
         self._controller = controller
-
-    @property
-    def unique_id(self) -> str:
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
+        self._attr_unique_id = self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
