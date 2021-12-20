@@ -1,7 +1,7 @@
 # pylint: disable=bad-continuation
 ''' The sensor module for Helios Easy Controls integration. '''
 import logging
-from typing import Any, Callable, Dict
+from typing import Dict
 
 from homeassistant.components.sensor import (STATE_CLASS_MEASUREMENT,
                                              STATE_CLASS_TOTAL_INCREASING,
@@ -13,6 +13,8 @@ from homeassistant.const import (CONF_MAC, DEVICE_CLASS_HUMIDITY,
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
+
+from custom_components.easycontrols.modbus_variable import IntModbusVariable, ModbusVariable
 
 from . import get_controller, get_device_info
 from .const import (ERRORS, INFOS, VARIABLE_ERRORS,
@@ -161,7 +163,7 @@ class EasyControlFlagSensor(SensorEntity):
     def __init__(
         self,
         controller: ThreadSafeController,
-        variable_name: str,
+        variable: IntModbusVariable,
         flags: Dict[int, str],
         description: SensorEntityDescription
     ):
@@ -171,8 +173,8 @@ class EasyControlFlagSensor(SensorEntity):
         Parameters
         controller: ThreadSafeController
             The thread safe Helios Easy Controls controller.
-        variable_name: str
-            The ModBus flag variable name.
+        variable: IntModbusVariable
+            The Modbus flag variable.
         flags: Dict[int, str]
             The dictionary which holds the flag value as the key
             and the related text as the value.
@@ -181,7 +183,7 @@ class EasyControlFlagSensor(SensorEntity):
         '''
         self.entity_description = description
         self._controller = controller
-        self._variable = variable_name
+        self._variable = variable
         self._flags = flags
         self._attr_unique_id = self._controller.mac + self.name
 
@@ -189,10 +191,9 @@ class EasyControlFlagSensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        value = self._controller.get_variable(
-            self._variable, 32, int
+        self._attr_native_value = self._get_string(
+            self._controller.get_variable(self._variable)
         )
-        self._attr_native_value = self._get_string(value)
         self._attr_available = self._attr_native_value is not None
 
     def _get_string(self, value: int) -> str:
@@ -230,9 +231,7 @@ class EasyControlsSensor(SensorEntity):
     def __init__(
         self,
         controller: ThreadSafeController,
-        variable_name: str,
-        variable_size: int,
-        converter: Callable[[str], Any],
+        variable: ModbusVariable,
         description: SensorEntityDescription
     ):
         '''
@@ -242,32 +241,21 @@ class EasyControlsSensor(SensorEntity):
         ----------
         controller: ThreadSafeController
             The thread safe Helios Easy Controls controller.
-        variable_name: str
-            The ModBus variable name.
-        variable_size: int
-            The ModBus variable value size.
-        converter: Callable[[str], Any]
-            The converter function which converts the string value
-            received from ModBus to sensor value.
+        variable: ModbusVariable
+            The Modbus variable.
         description: homeassistant.components.sensor.SensorEntityDescription
             The sensor description.
         '''
         self.entity_description = description
         self._controller = controller
-        self._variable_name = variable_name
-        self._converter = converter
-        self._variable_size = variable_size
+        self._variable = variable
         self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self):
         '''
         Updates the sensor value.
         '''
-        self._attr_native_value = self._controller.get_variable(
-            self._variable_name,
-            self._variable_size,
-            self._converter
-        )
+        self._attr_native_value = self._controller.get_variable(self._variable)
         self._attr_available = self._attr_native_value is not None
 
     @property
@@ -356,8 +344,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_PERCENTAGE_FAN_SPEED,
-            8,
-            float,
             SensorEntityDescription(
                 key='fan_speed',
                 name=f'{controller.device_name} fan speed percentage',
@@ -369,8 +355,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_FAN_STAGE,
-            1,
-            int,
             SensorEntityDescription(
                 key='fan_stage',
                 name=f'{controller.device_name} fan stage',
@@ -382,8 +366,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_EXTRACT_AIR_FAN_STAGE,
-            1,
-            int,
             SensorEntityDescription(
                 key='extract_air_fan_stage',
                 name=f'{controller.device_name} extract air fan stage',
@@ -395,8 +377,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_SUPPLY_AIR_FAN_STAGE,
-            1,
-            int,
             SensorEntityDescription(
                 key='supply_air_fan_stage',
                 name=f'{controller.device_name} supply air fan stage',
@@ -408,8 +388,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_TEMPERATURE_OUTSIDE_AIR,
-            8,
-            float,
             SensorEntityDescription(
                 key='outside_air_temperature',
                 name=f'{controller.device_name} outside air temperature',
@@ -422,8 +400,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_TEMPERATURE_SUPPLY_AIR,
-            8,
-            float,
             SensorEntityDescription(
                 key='supply_air_temperature',
                 name=f'{controller.device_name} supply air temperature',
@@ -436,8 +412,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_TEMPERATURE_EXTRACT_AIR,
-            8,
-            float,
             SensorEntityDescription(
                 key='extract_air_temperature',
                 name=f'{controller.device_name} extract air temperature',
@@ -450,8 +424,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_TEMPERATURE_OUTGOING_AIR,
-            8,
-            float,
             SensorEntityDescription(
                 key='outgoing_air_temperature',
                 name=f'{controller.device_name} outgoing air temperature',
@@ -464,8 +436,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_EXTRACT_AIR_RPM,
-            8,
-            int,
             SensorEntityDescription(
                 key='extract_air_rpm',
                 name=f'{controller.device_name} extract air rpm',
@@ -477,8 +447,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_SUPPLY_AIR_RPM,
-            8,
-            int,
             SensorEntityDescription(
                 key='supply_air_rpm',
                 name=f'{controller.device_name} supply air rpm',
@@ -490,8 +458,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_HUMIDITY_EXTRACT_AIR,
-            8,
-            int,
             SensorEntityDescription(
                 key='extract_air_relative_humidity',
                 name=f'{controller.device_name} extract air relative humidity',
@@ -504,8 +470,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_PARTY_MODE_REMAINING_TIME,
-            8,
-            int,
             SensorEntityDescription(
                 key='party_mode_remaining_time',
                 name=f'{controller.device_name} party mode remaining time',
@@ -516,8 +480,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_OPERATION_HOURS_SUPPLY_AIR_FAN,
-            10,
-            lambda x: round(float(x) / 60.0, 2),
             SensorEntityDescription(
                 key='supply_air_fan_operation_hours',
                 name=f'{controller.device_name} supply air fan operation hours',
@@ -529,8 +491,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_OPERATION_HOURS_EXTRACT_AIR_FAN,
-            10,
-            lambda x: round(float(x) / 60.0, 2),
             SensorEntityDescription(
                 key='extract_air_fan_operation_hours',
                 name=f'{controller.device_name} extract air fan operation hours',
@@ -542,8 +502,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_OPERATION_HOURS_PREHEATER,
-            10,
-            lambda x: round(float(x) / 60.0, 2),
             SensorEntityDescription(
                 key='preheater_operation_hours',
                 name=f'{controller.device_name} preheater operation hours',
@@ -555,8 +513,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_PERCENTAGE_PREHEATER,
-            4,
-            float,
             SensorEntityDescription(
                 key='preheater_percentage',
                 name=f'{controller.device_name} preheater percentage',
@@ -568,8 +524,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_OPERATION_HOURS_AFTERHEATER,
-            10,
-            lambda x: round(float(x) / 60.0, 2),
             SensorEntityDescription(
                 key='after_heater_operation_hours',
                 name=f'{controller.device_name} afterheater operation hours',
@@ -581,8 +535,6 @@ async def async_setup_entry(
         EasyControlsSensor(
             controller,
             VARIABLE_PERCENTAGE_AFTERHEATER,
-            4,
-            float,
             SensorEntityDescription(
                 key='afterheater_percentage',
                 name=f'{controller.device_name} afterheater percentage',
