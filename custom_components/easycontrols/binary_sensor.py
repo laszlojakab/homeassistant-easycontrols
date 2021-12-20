@@ -3,7 +3,6 @@
 The binary sensor module for Helios Easy Controls integration.
 '''
 import logging
-from typing import Callable
 
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_OPENING, DEVICE_CLASS_PROBLEM, BinarySensorEntity,
@@ -15,7 +14,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
 from . import get_controller, get_device_info
-from .const import INFO_FILTER_CHANGE_FLAG, VARIABLE_BYPASS, VARIABLE_INFOS
+from .const import VARIABLE_BYPASS, VARIABLE_INFO_FILTER_CHANGE
+from .modbus_variable import BoolModbusVariable
 from .threadsafe_controller import ThreadSafeController
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,9 +29,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
     def __init__(
         self,
         controller: ThreadSafeController,
-        variable_name: str,
-        variable_size: int,
-        converter: Callable[[str], bool],
+        variable: BoolModbusVariable,
         description: BinarySensorEntityDescription
     ):
         '''
@@ -41,30 +39,21 @@ class EasyControlBinarySensor(BinarySensorEntity):
         ----------
         controller: ThreadSafeController
             The thread safe Helios Easy Controls controller.
-        variable_name: str
-            The ModBus variable name.
-        variable_size: int
-            The ModBus variable size.
-        converter: Callable[[str], bool]
-            The converter function which converts the received ModBus
-            variable value to bool value.
+        variable: BoolModbusVariable
+            The Modbus variable.
         description: homeassistant.components.binary_sensor.BinarySensorEntityDescription
             The binary sensor description.
         '''
         self.entity_description = description
         self._controller = controller
-        self._variable = variable_name
-        self._converter = converter
-        self._size = variable_size
+        self._variable = variable
         self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self):
         '''
         Updates the sensor value.
         '''
-        self._attr_is_on = self._controller.get_variable(
-            self._variable, self._size, self._converter
-        )
+        self._attr_is_on = self._controller.get_variable(self._variable)
         self._attr_available = self._attr_is_on is not None
 
     @property
@@ -105,8 +94,6 @@ async def async_setup_entry(
         EasyControlBinarySensor(
             controller,
             VARIABLE_BYPASS,
-            8,
-            lambda x: int(x) == 1,
             BinarySensorEntityDescription(
                 key="bypass",
                 name=f'{controller.device_name} bypass',
@@ -116,9 +103,7 @@ async def async_setup_entry(
         ),
         EasyControlBinarySensor(
             controller,
-            VARIABLE_INFOS,
-            32,
-            lambda x: (int(x) & INFO_FILTER_CHANGE_FLAG) == INFO_FILTER_CHANGE_FLAG,
+            VARIABLE_INFO_FILTER_CHANGE,
             BinarySensorEntityDescription(
                 key="filter_change",
                 name=f'{controller.device_name} filter change',

@@ -35,8 +35,12 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 controller = EazyController(user_info[CONF_HOST])
-                device_type = controller.get_variable(VARIABLE_ARTICLE_DESCRIPTION, 31)
-                mac_address = controller.get_variable(VARIABLE_MAC_ADDRESS, 18, str)
+                device_type = controller.get_variable(
+                    VARIABLE_ARTICLE_DESCRIPTION.name, VARIABLE_ARTICLE_DESCRIPTION.size
+                )
+                mac_address = controller.get_variable(
+                    VARIABLE_MAC_ADDRESS.name, VARIABLE_MAC_ADDRESS.size
+                )
             # pylint: disable=broad-except
             except Exception as error:
                 _LOGGER.error('Error while creating controller: %s', error)

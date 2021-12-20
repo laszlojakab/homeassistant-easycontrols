@@ -5,9 +5,10 @@ The module of Helios Easy Controls thread safe controller.
 import logging
 import re
 import threading
-from typing import Any, Callable
+from typing import Any
 
 import eazyctrl
+from custom_components.easycontrols.modbus_variable import ModbusVariable
 
 from .const import (VARIABLE_ARTICLE_DESCRIPTION, VARIABLE_SERIAL_NUMBER,
                     VARIABLE_SOFTWARE_VERSION)
@@ -87,7 +88,7 @@ class ThreadSafeController:
         '''
         if self._model is None:
             try:
-                self._model = self.get_variable(VARIABLE_ARTICLE_DESCRIPTION, 128, str)
+                self._model = self.get_variable(VARIABLE_ARTICLE_DESCRIPTION)
             # pylint: disable=broad-except
             except Exception as error:
                 _LOGGER.error('Failed to get the model of Helios device: %s', error)
@@ -100,7 +101,7 @@ class ThreadSafeController:
         '''
         if self._version is None:
             try:
-                self._version = self.get_variable(VARIABLE_SOFTWARE_VERSION, 128, str)
+                self._version = self.get_variable(VARIABLE_SOFTWARE_VERSION)
             # pylint: disable=broad-except
             except Exception as error:
                 _LOGGER.error('Failed to get the software version of Helios device: %s', error)
@@ -114,7 +115,7 @@ class ThreadSafeController:
         '''
         if self._serial_number is None:
             try:
-                self._serial_number = self.get_variable(VARIABLE_SERIAL_NUMBER, 16, str)
+                self._serial_number = self.get_variable(VARIABLE_SERIAL_NUMBER)
             # pylint: disable=broad-except
             except Exception as error:
                 _LOGGER.error('Failed to get the serial number of Helios device: %s', error)
@@ -123,56 +124,45 @@ class ThreadSafeController:
 
     def get_variable(
         self,
-        variable_name: str,
-        variable_length: int,
-        conversion: Callable[[str], Any] = None
+        variable: ModbusVariable,
     ) -> Any:
         '''
         Gets the specified variable value from the Helios device.
 
         Parameters
         ----------
-        variable_name: str
-            The variable to query from Helios device.
-        variable_length: int
-            The length of the variable.
-        conversion: Callable[[str], Any]
-            The conversion function to apply to
-            the result returned by the Helios device.
+        variable: ModbusVariable
+            The variable to get.
         '''
         with self._lock:
-            _LOGGER.debug('Getting %s.', variable_name)
+            _LOGGER.debug('Getting %s.', variable.name)
             value = self._eazyctrl.get_variable(
-                variable_name,
-                variable_length,
-                conversion
+                variable.name,
+                variable.size,
+                variable.get_converter
             )
-            _LOGGER.debug('%s value: %s', variable_name, value)
+            _LOGGER.debug('%s value: %s', variable.name, value)
             return value
 
     def set_variable(
         self,
-        variable_name: str,
-        value: Any,
-        conversion: Callable[[Any], str] = None
+        variable: ModbusVariable,
+        value: Any
     ):
         '''
         Sets the specified variable value on the Helios device.
 
         Parameters
         ----------
-        variable_name: str
+        variable: ModbusVariable
             The variable to set on Helios device.
         value: Any
             The value to set on Helios device.
-        conversion: Callable[[Any], str]
-            The conversion function to apply to value before
-            sending to Helios device.
 
         Returns
         bool
             True if setting of variable succeeded otherwise False.
         '''
         with self._lock:
-            _LOGGER.debug('Setting %s to %s.', variable_name, value)
-            return self._eazyctrl.set_variable(variable_name, value, conversion)
+            _LOGGER.debug('Setting %s to %s.', variable.name, value)
+            return self._eazyctrl.set_variable(variable.name, value, variable.set_converter)
