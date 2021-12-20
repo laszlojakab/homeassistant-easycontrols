@@ -56,6 +56,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
         self._variable = variable_name
         self._converter = converter
         self._size = variable_size
+        self._attr_unique_id = self._controller.mac + self.name
 
     async def async_update(self):
         '''
@@ -65,13 +66,6 @@ class EasyControlBinarySensor(BinarySensorEntity):
             self._variable, self._size, self._converter
         )
         self._attr_available = self._attr_is_on is not None
-
-    @property
-    def unique_id(self):
-        '''
-        Gets the unique ID of the sensor.
-        '''
-        return self._controller.mac + self.name
 
     @property
     def device_info(self) -> DeviceInfo:
