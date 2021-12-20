@@ -169,24 +169,20 @@ class EasyControlsFanDevice(FanEntity):
         '''
         Updates the fan device.
         '''
-        self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM, 8, float)
-        self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM, 8, float)
+        self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM)
+        self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM)
         self._fan_stage = int(
-            self._controller.get_variable(VARIABLE_FAN_STAGE, 1, int))
+            self._controller.get_variable(VARIABLE_FAN_STAGE))
 
-        operation_mode = int(
-            self._controller.get_variable(VARIABLE_OPERATING_MODE, 1, int)
-        )
-        party_mode = self._controller.get_variable(VARIABLE_PARTY_MODE, 1, int)
-        standby_mode = self._controller.get_variable(
-            VARIABLE_STANDBY_MODE, 1, int)
-        holiday_mode = self._controller.get_variable(
-            VARIABLE_HOLIDAY_MODE, 1, int)
+        operation_mode = self._controller.get_variable(VARIABLE_OPERATING_MODE)
+        party_mode = self._controller.get_variable(VARIABLE_PARTY_MODE)
+        standby_mode = self._controller.get_variable(VARIABLE_STANDBY_MODE)
+        holiday_mode = self._controller.get_variable(VARIABLE_HOLIDAY_MODE)
 
-        if party_mode == 1:
+        if party_mode:
             preset_mode = PRESET_PARTY
         else:
-            if standby_mode == 1:
+            if standby_mode:
                 preset_mode = PRESET_STANDBY
             else:
                 if holiday_mode == 1:

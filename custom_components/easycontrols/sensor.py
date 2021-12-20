@@ -67,9 +67,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        percentage_fan_speed = self._controller.get_variable(
-            VARIABLE_PERCENTAGE_FAN_SPEED, 8, float
-        )
+        percentage_fan_speed = self._controller.get_variable(VARIABLE_PERCENTAGE_FAN_SPEED)
 
         if percentage_fan_speed is None:
             self._attr_native_value = None
@@ -116,15 +114,9 @@ class EasyControlsEfficiencySensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        outside_air_temperature = self._controller.get_variable(
-            VARIABLE_TEMPERATURE_OUTSIDE_AIR, 8, float
-        )
-        supply_air_temperature = self._controller.get_variable(
-            VARIABLE_TEMPERATURE_SUPPLY_AIR, 8, float
-        )
-        extract_air_temperature = self._controller.get_variable(
-            VARIABLE_TEMPERATURE_EXTRACT_AIR, 8, float
-        )
+        outside_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_OUTSIDE_AIR)
+        supply_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_SUPPLY_AIR)
+        extract_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_EXTRACT_AIR)
 
         if extract_air_temperature is None or \
            outside_air_temperature is None or \
@@ -212,7 +204,6 @@ class EasyControlFlagSensor(SensorEntity):
                         string += '\n'
                     string += item[1]
         return string
-
 
     @property
     def device_info(self) -> DeviceInfo:
