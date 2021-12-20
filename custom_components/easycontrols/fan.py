@@ -107,35 +107,25 @@ class EasyControlsFanDevice(FanEntity):
         speed: str
             The speed of the fan.
         '''
-        self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, '{:d}'
-        )  # operation mode = manual
-        self._controller.set_variable(
-            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, '{:d}'
-        )
+        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
+        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1)
 
     async def async_turn_on(self, speed=None, **kwargs):
         '''
         Turns on the fan at the specific speed.
         '''
-        self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, '{:d}'
-        )  # operation mode = manual
+        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
         if speed is None:
             speed = SPEED_RATED_VENTILATION
 
-        self._controller.set_variable(
-            VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1, '{:d}'
-        )
+        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1)
 
     async def async_turn_off(self, **kwargs):
         '''
         Turns off the fan.
         '''
-        self._controller.set_variable(
-            VARIABLE_OPERATING_MODE, 1, '{:d}'
-        )  # operation mode = manual
-        self._controller.set_variable(VARIABLE_FAN_STAGE, 0, '{:d}')
+        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
+        self._controller.set_variable(VARIABLE_FAN_STAGE, 0)
 
     def start_party_mode(self, speed: str, duration: int):
         '''
@@ -149,21 +139,13 @@ class EasyControlsFanDevice(FanEntity):
         '''
         if duration == 0:
             # stop current party mode
-            self._controller.set_variable(
-                VARIABLE_PARTY_MODE, 0, '{:d}'
-            )
+            self._controller.set_variable(VARIABLE_PARTY_MODE, False)
             return
 
-        self._controller.set_variable(
-            VARIABLE_PARTY_MODE_FAN_STAGE, self.speed_list.index(
-                speed) + 1, '{:d}'
-        )
-        self._controller.set_variable(
-            VARIABLE_PARTY_MODE_DURATION, duration, '{:d}'
-        )
-        self._controller.set_variable(
-            VARIABLE_PARTY_MODE, 1, '{:d}'
-        )
+        self._controller.set_variable(VARIABLE_PARTY_MODE_FAN_STAGE,
+                                      self.speed_list.index(speed) + 1)
+        self._controller.set_variable(VARIABLE_PARTY_MODE_DURATION, duration)
+        self._controller.set_variable(VARIABLE_PARTY_MODE, True)
 
     async def async_update(self) -> None:
         '''
