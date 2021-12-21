@@ -7,6 +7,7 @@ import logging
 from homeassistant.components.fan import FanEntity, FanEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
+from homeassistant.core import ServiceCall
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
@@ -14,7 +15,8 @@ from homeassistant.helpers.typing import HomeAssistantType
 from . import get_controller, get_device_info
 from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
                     PRESET_HOLIDAY_INTERVAL, PRESET_NOT_SET, PRESET_PARTY,
-                    PRESET_STANDBY, VARIABLE_EXTRACT_AIR_RPM,
+                    PRESET_STANDBY, SERVICE_START_PARTY_MODE,
+                    SERVICE_STOP_PARTY_MODE, VARIABLE_EXTRACT_AIR_RPM,
                     VARIABLE_FAN_STAGE, VARIABLE_HOLIDAY_MODE,
                     VARIABLE_OPERATING_MODE, VARIABLE_PARTY_MODE,
                     VARIABLE_PARTY_MODE_DURATION,
@@ -129,23 +131,23 @@ class EasyControlsFanDevice(FanEntity):
 
     def start_party_mode(self, speed: str, duration: int):
         '''
-        Starts the party mode of the fan. Set duration to 0
-        to stop current party mode.
+        Starts the party mode.
 
         speed: str
             The speed of the party mode.
         duration: int
             The duration of the party mode.
         '''
-        if duration == 0:
-            # stop current party mode
-            self._controller.set_variable(VARIABLE_PARTY_MODE, False)
-            return
-
         self._controller.set_variable(VARIABLE_PARTY_MODE_FAN_STAGE,
                                       self.speed_list.index(speed) + 1)
         self._controller.set_variable(VARIABLE_PARTY_MODE_DURATION, duration)
         self._controller.set_variable(VARIABLE_PARTY_MODE, True)
+
+    def stop_party_mode(self):
+        '''
+        Stops the party mode.
+        '''
+        self._controller.set_variable(VARIABLE_PARTY_MODE, False)
 
     async def async_update(self) -> None:
         '''
@@ -212,11 +214,26 @@ async def async_setup_entry(
 
     async_add_entities([fan])
 
-    def handle_party_mode(call):
+    def handle_party_mode(call: ServiceCall):
+        _LOGGER.warning('party_mode service is deprecated. Use start_party_mode and stop_party_mode service instead!')
+        duration = call.data.get('duration', 60)
+        speed = call.data.get('speed', 'high')
+        if speed == 0:
+            fan.stop_party_mode()
+        else:
+            fan.start_party_mode(speed, duration)
+
+    hass.services.async_register(DOMAIN, 'party_mode', handle_party_mode)
+
+    def handle_start_party_mode(call: ServiceCall):
         duration = call.data.get('duration', 60)
         speed = call.data.get('speed', 'high')
         fan.start_party_mode(speed, duration)
 
-    hass.services.async_register(DOMAIN, 'party_mode', handle_party_mode)
+    def handle_stop_party_mode(call: ServiceCall):
+        fan.stop_party_mode()
+
+    hass.services.async_register(DOMAIN, SERVICE_START_PARTY_MODE, handle_start_party_mode)
+    hass.services.async_register(DOMAIN, SERVICE_STOP_PARTY_MODE, handle_stop_party_mode)
 
     _LOGGER.info('Setting up Helios EasyControls fan device completed.')
