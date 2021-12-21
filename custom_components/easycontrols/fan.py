@@ -3,17 +3,20 @@
 Fan entity support for Helios Easy Controls device.
 '''
 import logging
+from typing import Any, Optional
 
-from homeassistant.components.fan import FanEntity, FanEntityDescription
+from homeassistant.components.fan import SUPPORT_SET_SPEED, FanEntity, FanEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
 from homeassistant.core import ServiceCall
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.util.percentage import (ordered_list_item_to_percentage,
+                                           percentage_to_ordered_list_item)
 
 from . import get_controller, get_device_info
-from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
+from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, OPERATING_MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
                     PRESET_HOLIDAY_INTERVAL, PRESET_NOT_SET, PRESET_PARTY,
                     PRESET_STANDBY, SERVICE_START_PARTY_MODE,
                     SERVICE_STOP_PARTY_MODE, VARIABLE_EXTRACT_AIR_RPM,
@@ -24,16 +27,21 @@ from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
                     VARIABLE_SUPPLY_AIR_RPM)
 from .threadsafe_controller import ThreadSafeController
 
-SUPPORT_SET_SPEED = 1
-
 SPEED_BASIC_VENTILATION = 'basic'
 SPEED_RATED_VENTILATION = 'rated'
 SPEED_INTENSIVE_VENTILATION = 'intensive'
 SPEED_MAXIMUM_FAN_SPEED = 'maximum'
 
+ORDERED_NAMED_FAN_SPEEDS = [
+    SPEED_BASIC_VENTILATION,
+    SPEED_RATED_VENTILATION,
+    SPEED_INTENSIVE_VENTILATION,
+    SPEED_MAXIMUM_FAN_SPEED
+]
+
 _LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=abstract-method
 class EasyControlsFanDevice(FanEntity):
     '''
     Represents a fan entity which controls the Helios device.
@@ -41,19 +49,26 @@ class EasyControlsFanDevice(FanEntity):
 
     def __init__(self, controller: ThreadSafeController):
         self.entity_description = FanEntityDescription(
-            key="fan",
+            key='fan',
             name=controller.device_name
         )
         self._controller = controller
-        self._fan_stage = None
+        self._speed = None
         self._supply_air_rpm = None
         self._extract_air_rpm = None
         self._attr_extra_state_attributes = {}
 
     @property
+    def available(self) -> bool:
+        '''
+        Gets the value indicates wether the fan is available.
+        '''
+        return self._speed is not None
+
+    @property
     def unique_id(self):
         '''
-        Get the unique ID of the fan.
+        Gets the unique ID of the fan.
         '''
         return self._controller.mac
 
@@ -72,25 +87,17 @@ class EasyControlsFanDevice(FanEntity):
         return SUPPORT_SET_SPEED
 
     @property
-    def speed_list(self):
-        '''
-        Gets the supported speed list.
-        '''
-        return [
-            SPEED_BASIC_VENTILATION,
-            SPEED_RATED_VENTILATION,
-            SPEED_INTENSIVE_VENTILATION,
-            SPEED_MAXIMUM_FAN_SPEED,
-        ]
+    def speed_count(self) -> int:
+        '''Return the number of speeds the fan supports.'''
+        return len(ORDERED_NAMED_FAN_SPEEDS)
 
     @property
-    def speed(self):
-        '''
-        Gets the current speed.
-        '''
-        if self._fan_stage is None or self._fan_stage == 0:
-            return None
-        return self.speed_list[self._fan_stage - 1]
+    def percentage(self) -> Optional[int]:
+        '''Return the current speed percentage.'''
+        if self._speed is None or self._speed == 0:
+            return 0
+        else:
+            return ordered_list_item_to_percentage(ORDERED_NAMED_FAN_SPEEDS, self._speed)
 
     @property
     def is_on(self):
@@ -100,33 +107,46 @@ class EasyControlsFanDevice(FanEntity):
         return ((not self._supply_air_rpm is None and self._supply_air_rpm > 0) or
                 (not self._extract_air_rpm is None and self._extract_air_rpm > 0))
 
-    async def async_set_speed(self, speed: str):
+    async def async_set_percentage(self, percentage: int) -> None:
         '''
-        Sets the speed of the fan
+        Sets the speed percentage of the fan.
 
-        Parameter
-        ---------
-        speed: str
-            The speed of the fan.
+        Parameters
+        ----------
+        percentage: int
+            The speed percentage.
         '''
-        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
-        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1)
+        if percentage == 0:
+            await self.async_turn_off()
+        else:
+            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
 
-    async def async_turn_on(self, speed=None, **kwargs):
+            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
+
+    async def async_turn_on(
+        self,
+        speed: Optional[str] = None,
+        percentage: Optional[int] = None,
+        preset_mode: Optional[str] = None,
+        **kwargs: Any
+    ):
         '''
         Turns on the fan at the specific speed.
         '''
-        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
-        if speed is None:
+        self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+        if percentage is None:
             speed = SPEED_RATED_VENTILATION
+        else:
+            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
 
-        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_list.index(speed) + 1)
+        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs: Any):
         '''
         Turns off the fan.
         '''
-        self._controller.set_variable(VARIABLE_OPERATING_MODE, 1)  # operation mode = manual
+        self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
         self._controller.set_variable(VARIABLE_FAN_STAGE, 0)
 
     def start_party_mode(self, speed: str, duration: int):
@@ -160,8 +180,11 @@ class EasyControlsFanDevice(FanEntity):
         '''
         self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM)
         self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM)
-        self._fan_stage = int(
-            self._controller.get_variable(VARIABLE_FAN_STAGE))
+        fan_stage = self._controller.get_variable(VARIABLE_FAN_STAGE)
+        if fan_stage == 0:
+            self._speed = 0
+        else:
+            self._speed = self.fan_stage_to_speed(self._controller.get_variable(VARIABLE_FAN_STAGE))
 
         operation_mode = self._controller.get_variable(VARIABLE_OPERATING_MODE)
         party_mode = self._controller.get_variable(VARIABLE_PARTY_MODE)
@@ -188,6 +211,38 @@ class EasyControlsFanDevice(FanEntity):
             'preset_mode': preset_mode,
             'operation_mode': operation_mode
         }
+
+    def speed_to_fan_stage(self, speed: str) -> int:
+        '''
+        Converts named fan speed to fan stage.
+
+        Parameters
+        ----------
+        speed: str
+            The named fan speed to convert.
+
+        Returns
+        -------
+        int
+            The fan stage belongs to speed.
+        '''
+        return ORDERED_NAMED_FAN_SPEEDS.index(speed) + 1
+
+    def fan_stage_to_speed(self, fan_stage: int) -> str:
+        '''
+        Converts fan stage to named speed.
+
+        Parameters
+        ----------
+        fan_stage: int
+            The fan stage to convert.
+
+        Returns
+        -------
+        int
+            The named fan speed belongs to the fan stage.
+        '''
+        return ORDERED_NAMED_FAN_SPEEDS[fan_stage - 1]
 
 
 async def async_setup_entry(
@@ -220,7 +275,9 @@ async def async_setup_entry(
     async_add_entities([fan])
 
     def handle_party_mode(call: ServiceCall):
-        _LOGGER.warning('party_mode service is deprecated. Use start_party_mode and stop_party_mode service instead!')
+        _LOGGER.warning(
+            'party_mode service is deprecated. Use start_party_mode and stop_party_mode service instead!'
+        )
         duration = call.data.get('duration', 60)
         speed = call.data.get('speed', 'high')
         if speed == 0:
