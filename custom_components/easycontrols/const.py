@@ -54,6 +54,9 @@ PRESET_STANDBY = 'standby'
 PRESET_HOLIDAY_INTERVAL = 'holiday interval'
 PRESET_HOLIDAY_CONSTANT = 'holiday constant'
 
+SERVICE_START_PARTY_MODE = 'start_party_mode'
+SERVICE_STOP_PARTY_MODE = 'stop_party_mode'
+
 ERRORS = {
     0x00000001: 'Fan speed error «Supply air» (outside air)',
     0x00000002: 'Fan speed error «Extract air» (outgoing air)',
