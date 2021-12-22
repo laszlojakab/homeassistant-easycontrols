@@ -3,9 +3,11 @@
 Fan entity support for Helios Easy Controls device.
 '''
 import logging
-from typing import Any, Optional
+from typing import Any, List, Optional
 
-from homeassistant.components.fan import SUPPORT_SET_SPEED, FanEntity, FanEntityDescription
+from homeassistant.components.fan import (SUPPORT_PRESET_MODE,
+                                          SUPPORT_SET_SPEED, FanEntity,
+                                          FanEntityDescription)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
 from homeassistant.core import ServiceCall
@@ -16,11 +18,10 @@ from homeassistant.util.percentage import (ordered_list_item_to_percentage,
                                            percentage_to_ordered_list_item)
 
 from . import get_controller, get_device_info
-from .const import (DOMAIN, MODE_AUTO, MODE_MANUAL, OPERATING_MODE_MANUAL, PRESET_HOLIDAY_CONSTANT,
-                    PRESET_HOLIDAY_INTERVAL, PRESET_NOT_SET, PRESET_PARTY,
-                    PRESET_STANDBY, SERVICE_START_PARTY_MODE,
-                    SERVICE_STOP_PARTY_MODE, VARIABLE_EXTRACT_AIR_RPM,
-                    VARIABLE_FAN_STAGE, VARIABLE_HOLIDAY_MODE,
+from .const import (DOMAIN, OPERATING_MODE_AUTO, OPERATING_MODE_MANUAL,
+                    PRESET_AUTO, PRESET_PARTY, PRESET_STANDBY,
+                    SERVICE_START_PARTY_MODE, SERVICE_STOP_PARTY_MODE,
+                    VARIABLE_EXTRACT_AIR_RPM, VARIABLE_FAN_STAGE,
                     VARIABLE_OPERATING_MODE, VARIABLE_PARTY_MODE,
                     VARIABLE_PARTY_MODE_DURATION,
                     VARIABLE_PARTY_MODE_FAN_STAGE, VARIABLE_STANDBY_MODE,
@@ -42,6 +43,8 @@ ORDERED_NAMED_FAN_SPEEDS = [
 _LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=abstract-method
+
+
 class EasyControlsFanDevice(FanEntity):
     '''
     Represents a fan entity which controls the Helios device.
@@ -56,6 +59,7 @@ class EasyControlsFanDevice(FanEntity):
         self._speed = None
         self._supply_air_rpm = None
         self._extract_air_rpm = None
+        self._preset_mode = None
         self._attr_extra_state_attributes = {}
 
     @property
@@ -84,7 +88,19 @@ class EasyControlsFanDevice(FanEntity):
         '''
         Gets the supported features flag.
         '''
-        return SUPPORT_SET_SPEED
+        return SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
+
+    @property
+    def preset_modes(self) -> List[str]:
+        return [
+            PRESET_AUTO,
+            PRESET_PARTY,
+            PRESET_STANDBY
+        ]
+
+    @property
+    def preset_mode(self) -> str:
+        return self._preset_mode
 
     @property
     def speed_count(self) -> int:
@@ -124,6 +140,17 @@ class EasyControlsFanDevice(FanEntity):
             self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
             self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
 
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set the preset mode of the fan."""
+        if preset_mode == PRESET_AUTO:
+            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO)
+        elif preset_mode == PRESET_PARTY:
+            self._controller.set_variable(VARIABLE_PARTY_MODE, True)
+        elif preset_mode == PRESET_STANDBY:
+            self._controller.set_variable(VARIABLE_STANDBY_MODE, True)
+        else:
+            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+
     async def async_turn_on(
         self,
         speed: Optional[str] = None,
@@ -134,13 +161,15 @@ class EasyControlsFanDevice(FanEntity):
         '''
         Turns on the fan at the specific speed.
         '''
-        self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
-        if percentage is None:
-            speed = SPEED_RATED_VENTILATION
-        else:
-            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
+        if percentage is None and preset_mode is None:
+            percentage = 50
 
-        self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
+        if percentage is not None:
+            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
+            self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
+        else:
+            await self.async_set_preset_mode(preset_mode)
 
     async def async_turn_off(self, **kwargs: Any):
         '''
@@ -186,31 +215,18 @@ class EasyControlsFanDevice(FanEntity):
         else:
             self._speed = self.fan_stage_to_speed(self._controller.get_variable(VARIABLE_FAN_STAGE))
 
-        operation_mode = self._controller.get_variable(VARIABLE_OPERATING_MODE)
+        operating_mode = self._controller.get_variable(VARIABLE_OPERATING_MODE)
         party_mode = self._controller.get_variable(VARIABLE_PARTY_MODE)
         standby_mode = self._controller.get_variable(VARIABLE_STANDBY_MODE)
-        holiday_mode = self._controller.get_variable(VARIABLE_HOLIDAY_MODE)
 
         if party_mode:
-            preset_mode = PRESET_PARTY
+            self._preset_mode = PRESET_PARTY
+        elif standby_mode:
+            self._preset_mode = PRESET_STANDBY
+        elif operating_mode == OPERATING_MODE_AUTO:
+            self._preset_mode = PRESET_AUTO
         else:
-            if standby_mode:
-                preset_mode = PRESET_STANDBY
-            else:
-                if holiday_mode == 1:
-                    preset_mode = PRESET_HOLIDAY_INTERVAL
-                else:
-                    if holiday_mode == 2:
-                        preset_mode = PRESET_HOLIDAY_CONSTANT
-                    else:
-                        preset_mode = PRESET_NOT_SET
-
-        operation_mode = MODE_AUTO if operation_mode == 0 else MODE_MANUAL
-
-        self._attr_extra_state_attributes = {
-            'preset_mode': preset_mode,
-            'operation_mode': operation_mode
-        }
+            self._preset_mode = None
 
     def speed_to_fan_stage(self, speed: str) -> int:
         '''
