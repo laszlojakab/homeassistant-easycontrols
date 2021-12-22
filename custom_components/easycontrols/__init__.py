@@ -83,7 +83,8 @@ def get_device_info(controller: ThreadSafeController) -> DeviceInfo:
         name=controller.device_name,
         manufacturer='Helios',
         model=controller.model,
-        sw_version=controller.version
+        sw_version=controller.version,
+        configuration_url=f'http://{controller.host}'
     )
 
 
