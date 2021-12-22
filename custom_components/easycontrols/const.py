@@ -6,9 +6,6 @@ DOMAIN = 'easycontrols'
 
 DATA_CONTROLLER = 'controller'
 
-MODE_MANUAL = 'manual'
-MODE_AUTO = 'auto'
-
 INFO_FILTER_CHANGE_FLAG = 0x01
 
 VARIABLE_ARTICLE_DESCRIPTION = StrModbusVariable('v00000', 31)
@@ -30,7 +27,6 @@ VARIABLE_TEMPERATURE_EXTRACT_AIR = FloatModbusVariable('v00107', 7)
 VARIABLE_SERIAL_NUMBER = StrModbusVariable('v00303', 16)
 VARIABLE_SUPPLY_AIR_RPM = IntModbusVariable('v00348', 4)
 VARIABLE_EXTRACT_AIR_RPM = IntModbusVariable('v00349', 4)
-VARIABLE_HOLIDAY_MODE = IntModbusVariable('v00601', 1)
 VARIABLE_FILTER_CHANGE = BoolModbusVariable('v01031')
 VARIABLE_SUPPLY_AIR_FAN_STAGE = IntModbusVariable('v01050', 1)
 VARIABLE_EXTRACT_AIR_FAN_STAGE = IntModbusVariable('v01051', 1)
@@ -48,11 +44,9 @@ VARIABLE_PERCENTAGE_AFTERHEATER = IntModbusVariable('v02118', 3)
 VARIABLE_BYPASS = BoolModbusVariable('v02119')
 VARIABLE_HUMIDITY_EXTRACT_AIR = IntModbusVariable('v02136', 3)
 
-PRESET_NOT_SET = 'not set'
 PRESET_PARTY = 'party'
 PRESET_STANDBY = 'standby'
-PRESET_HOLIDAY_INTERVAL = 'holiday interval'
-PRESET_HOLIDAY_CONSTANT = 'holiday constant'
+PRESET_AUTO = 'auto'
 
 SERVICE_START_PARTY_MODE = 'start_party_mode'
 SERVICE_STOP_PARTY_MODE = 'stop_party_mode'
