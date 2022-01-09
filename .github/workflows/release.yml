@@ -22,14 +22,14 @@ jobs:
 
       - name: Create zip
         run: |
-          cd custom_components/homeassistant-easycontrols
+          cd custom_components/easycontrols
           zip homeassistant-easycontrols.zip -r ./
 
       - name: Upload zip to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./custom_components/homeassistant-easycontrols/homeassistant-easycontrols.zip
+          file: ./custom_components/easycontrols/homeassistant-easycontrols.zip
           asset_name: homeassistant-easycontrols.zip
           tag: ${{ github.ref }}
           overwrite: true
