@@ -1,4 +1,3 @@
-# pylint: disable=bad-continuation
 '''
 The module contains Modbus variables.
 '''

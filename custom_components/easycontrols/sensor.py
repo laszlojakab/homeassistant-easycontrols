@@ -1,4 +1,3 @@
-# pylint: disable=bad-continuation
 ''' The sensor module for Helios Easy Controls integration. '''
 import logging
 from typing import Dict
@@ -34,7 +33,7 @@ from .const import (ERRORS, INFOS, VARIABLE_ERRORS,
                     VARIABLE_TEMPERATURE_SUPPLY_AIR, VARIABLE_WARNINGS,
                     WARNINGS)
 from .modbus_variable import IntModbusVariable, ModbusVariable
-from .threadsafe_controller import ThreadSafeController
+from .controller import Controller
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,13 +43,13 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
     Represents a sensor which provides current airflow rate.
     '''
 
-    def __init__(self, controller: ThreadSafeController):
+    def __init__(self, controller: Controller):
         '''
         Initialize a new instance of EasyControlsAirFlowRateSensor class.
 
         Parameters
         ----------
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller instance.
         '''
         self.entity_description = SensorEntityDescription(
@@ -68,7 +67,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        percentage_fan_speed = self._controller.get_variable(VARIABLE_PERCENTAGE_FAN_SPEED)
+        percentage_fan_speed = await self._controller.get_variable(VARIABLE_PERCENTAGE_FAN_SPEED)
 
         if percentage_fan_speed is None:
             self._attr_native_value = None
@@ -92,13 +91,13 @@ class EasyControlsEfficiencySensor(SensorEntity):
     For more details: https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     '''
 
-    def __init__(self, controller: ThreadSafeController):
+    def __init__(self, controller: Controller):
         '''
         Initialize a new instance of EasyControlsEfficiencySensor class.
 
         Parameters
         ----------
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller.
         '''
         self.entity_description = SensorEntityDescription(
@@ -116,9 +115,15 @@ class EasyControlsEfficiencySensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        outside_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_OUTSIDE_AIR)
-        supply_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_SUPPLY_AIR)
-        extract_air_temperature = self._controller.get_variable(VARIABLE_TEMPERATURE_EXTRACT_AIR)
+        outside_air_temperature = await self._controller.get_variable(
+            VARIABLE_TEMPERATURE_OUTSIDE_AIR
+        )
+        supply_air_temperature = await self._controller.get_variable(
+            VARIABLE_TEMPERATURE_SUPPLY_AIR
+        )
+        extract_air_temperature = await self._controller.get_variable(
+            VARIABLE_TEMPERATURE_EXTRACT_AIR
+        )
 
         if extract_air_temperature is None or \
            outside_air_temperature is None or \
@@ -156,7 +161,7 @@ class EasyControlFlagSensor(SensorEntity):
 
     def __init__(
         self,
-        controller: ThreadSafeController,
+        controller: Controller,
         variable: IntModbusVariable,
         flags: Dict[int, str],
         description: SensorEntityDescription
@@ -165,7 +170,7 @@ class EasyControlFlagSensor(SensorEntity):
         Initialize a new instance of EasyControlsFlagSensor class.
 
         Parameters
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller.
         variable: IntModbusVariable
             The Modbus flag variable.
@@ -186,7 +191,7 @@ class EasyControlFlagSensor(SensorEntity):
         Updates the sensor value.
         '''
         self._attr_native_value = self._get_string(
-            self._controller.get_variable(self._variable)
+            await self._controller.get_variable(self._variable)
         )
         self._attr_available = self._attr_native_value is not None
 
@@ -223,7 +228,7 @@ class EasyControlsSensor(SensorEntity):
 
     def __init__(
         self,
-        controller: ThreadSafeController,
+        controller: Controller,
         variable: ModbusVariable,
         description: SensorEntityDescription
     ):
@@ -232,7 +237,7 @@ class EasyControlsSensor(SensorEntity):
 
         Parameters
         ----------
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller.
         variable: ModbusVariable
             The Modbus variable.
@@ -248,7 +253,7 @@ class EasyControlsSensor(SensorEntity):
         '''
         Updates the sensor value.
         '''
-        self._attr_native_value = self._controller.get_variable(self._variable)
+        self._attr_native_value = await self._controller.get_variable(self._variable)
         self._attr_available = self._attr_native_value is not None
 
     @property
@@ -266,7 +271,7 @@ class EasyControlsVersionSensor(SensorEntity):
 
     def __init__(
         self,
-        controller: ThreadSafeController,
+        controller: Controller,
         name: str
     ):
         '''
@@ -274,7 +279,7 @@ class EasyControlsVersionSensor(SensorEntity):
 
         Parameters
         ----------
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller
         name: str
             The name of the sensor.
