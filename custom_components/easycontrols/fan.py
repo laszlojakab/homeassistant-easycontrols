@@ -1,4 +1,3 @@
-# pylint: disable=bad-continuation
 '''
 Fan entity support for Helios Easy Controls device.
 '''
@@ -26,7 +25,7 @@ from .const import (DOMAIN, OPERATING_MODE_AUTO, OPERATING_MODE_MANUAL,
                     VARIABLE_PARTY_MODE_DURATION,
                     VARIABLE_PARTY_MODE_FAN_STAGE, VARIABLE_STANDBY_MODE,
                     VARIABLE_SUPPLY_AIR_RPM)
-from .threadsafe_controller import ThreadSafeController
+from .controller import Controller
 
 SPEED_BASIC_VENTILATION = 'basic'
 SPEED_RATED_VENTILATION = 'rated'
@@ -50,7 +49,7 @@ class EasyControlsFanDevice(FanEntity):
     Represents a fan entity which controls the Helios device.
     '''
 
-    def __init__(self, controller: ThreadSafeController):
+    def __init__(self, controller: Controller):
         self.entity_description = FanEntityDescription(
             key='fan',
             name=controller.device_name
@@ -137,19 +136,19 @@ class EasyControlsFanDevice(FanEntity):
         else:
             speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
 
-            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
-            self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
+            await self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            await self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set the preset mode of the fan."""
         if preset_mode == PRESET_AUTO:
-            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO)
+            await self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO)
         elif preset_mode == PRESET_PARTY:
-            self._controller.set_variable(VARIABLE_PARTY_MODE, True)
+            await self._controller.set_variable(VARIABLE_PARTY_MODE, True)
         elif preset_mode == PRESET_STANDBY:
-            self._controller.set_variable(VARIABLE_STANDBY_MODE, True)
+            await self._controller.set_variable(VARIABLE_STANDBY_MODE, True)
         else:
-            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            await self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
 
     async def async_turn_on(
         self,
@@ -165,9 +164,9 @@ class EasyControlsFanDevice(FanEntity):
             percentage = 50
 
         if percentage is not None:
-            self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            await self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
             speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
-            self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
+            await self._controller.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
         else:
             await self.async_set_preset_mode(preset_mode)
 
@@ -175,10 +174,10 @@ class EasyControlsFanDevice(FanEntity):
         '''
         Turns off the fan.
         '''
-        self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
-        self._controller.set_variable(VARIABLE_FAN_STAGE, 0)
+        await self._controller.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+        await self._controller.set_variable(VARIABLE_FAN_STAGE, 0)
 
-    def start_party_mode(self, speed: str, duration: int):
+    async def start_party_mode(self, speed: str, duration: int):
         '''
         Starts the party mode.
 
@@ -190,34 +189,36 @@ class EasyControlsFanDevice(FanEntity):
             Set to None to keep the previously set value.
         '''
         if speed is not None:
-            self._controller.set_variable(VARIABLE_PARTY_MODE_FAN_STAGE,
+            await self._controller.set_variable(VARIABLE_PARTY_MODE_FAN_STAGE,
                                           self.speed_to_fan_stage(speed))
         if duration is not None:
-            self._controller.set_variable(VARIABLE_PARTY_MODE_DURATION, duration)
+            await self._controller.set_variable(VARIABLE_PARTY_MODE_DURATION, duration)
 
-        self._controller.set_variable(VARIABLE_PARTY_MODE, True)
+        await self._controller.set_variable(VARIABLE_PARTY_MODE, True)
 
-    def stop_party_mode(self):
+    async def stop_party_mode(self):
         '''
         Stops the party mode.
         '''
-        self._controller.set_variable(VARIABLE_PARTY_MODE, False)
+        await self._controller.set_variable(VARIABLE_PARTY_MODE, False)
 
     async def async_update(self) -> None:
         '''
         Updates the fan device.
         '''
-        self._supply_air_rpm = self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM)
-        self._extract_air_rpm = self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM)
-        fan_stage = self._controller.get_variable(VARIABLE_FAN_STAGE)
+        self._supply_air_rpm = await self._controller.get_variable(VARIABLE_SUPPLY_AIR_RPM)
+        self._extract_air_rpm = await self._controller.get_variable(VARIABLE_EXTRACT_AIR_RPM)
+        fan_stage = await self._controller.get_variable(VARIABLE_FAN_STAGE)
         if fan_stage == 0:
             self._speed = 0
         else:
-            self._speed = self.fan_stage_to_speed(self._controller.get_variable(VARIABLE_FAN_STAGE))
+            self._speed = self.fan_stage_to_speed(
+                await self._controller.get_variable(VARIABLE_FAN_STAGE)
+            )
 
-        operating_mode = self._controller.get_variable(VARIABLE_OPERATING_MODE)
-        party_mode = self._controller.get_variable(VARIABLE_PARTY_MODE)
-        standby_mode = self._controller.get_variable(VARIABLE_STANDBY_MODE)
+        operating_mode = await self._controller.get_variable(VARIABLE_OPERATING_MODE)
+        party_mode = await self._controller.get_variable(VARIABLE_PARTY_MODE)
+        standby_mode = await self._controller.get_variable(VARIABLE_STANDBY_MODE)
 
         if party_mode:
             self._preset_mode = PRESET_PARTY
@@ -290,26 +291,28 @@ async def async_setup_entry(
 
     async_add_entities([fan])
 
-    def handle_party_mode(call: ServiceCall):
+    async def handle_party_mode(call: ServiceCall):
         _LOGGER.warning(
-            'party_mode service is deprecated. Use start_party_mode and stop_party_mode service instead!'
+            'party_mode service is deprecated. '
+            'Use start_party_mode and stop_party_mode service instead!'
         )
         duration = call.data.get('duration', 60)
         speed = call.data.get('speed', 'high')
         if speed == 0:
-            fan.stop_party_mode()
+            await fan.stop_party_mode()
         else:
-            fan.start_party_mode(speed, duration)
+            await fan.start_party_mode(speed, duration)
 
     hass.services.async_register(DOMAIN, 'party_mode', handle_party_mode)
 
-    def handle_start_party_mode(call: ServiceCall):
+    async def handle_start_party_mode(call: ServiceCall):
         duration = call.data.get('duration', None)
         speed = call.data.get('speed', None)
-        fan.start_party_mode(speed, duration)
+        await fan.start_party_mode(speed, duration)
 
-    def handle_stop_party_mode(call: ServiceCall):
-        fan.stop_party_mode()
+    # pylint: disable=unused-argument
+    async def handle_stop_party_mode(call: ServiceCall):
+        await fan.stop_party_mode()
 
     hass.services.async_register(DOMAIN, SERVICE_START_PARTY_MODE, handle_start_party_mode)
     hass.services.async_register(DOMAIN, SERVICE_STOP_PARTY_MODE, handle_stop_party_mode)

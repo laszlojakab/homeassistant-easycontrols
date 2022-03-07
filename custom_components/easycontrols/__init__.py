@@ -6,7 +6,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from .const import DATA_CONTROLLER, DOMAIN
-from .threadsafe_controller import ThreadSafeController
+from .controller import Controller
 
 
 # pylint: disable=unused-argument
@@ -48,11 +48,15 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     '''
 
     if not is_controller_exists(hass, config_entry.data[CONF_MAC]):
-        set_controller(hass, ThreadSafeController(
+        controller = Controller(
             config_entry.data[CONF_NAME],
             config_entry.data[CONF_HOST],
             config_entry.data[CONF_MAC]
-        ))
+        )
+
+        await controller.init()
+
+        set_controller(hass, controller)
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry, 'fan')
@@ -68,13 +72,13 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     return True
 
 
-def get_device_info(controller: ThreadSafeController) -> DeviceInfo:
+def get_device_info(controller: Controller) -> DeviceInfo:
     '''
     Gets the device info based on the specified device name and the controller
 
     Parameters
     ----------
-    controller: ThreadSafeController
+    controller: Controller
         The thread safe Helios Easy Controls controller.
     '''
     return DeviceInfo(
@@ -109,13 +113,13 @@ def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
     return mac_address in hass.data[DOMAIN][DATA_CONTROLLER]
 
 
-def set_controller(hass: HomeAssistantType, controller: ThreadSafeController) -> None:
+def set_controller(hass: HomeAssistantType, controller: Controller) -> None:
     '''
     Stores the specified controller in hass.data by its MAC address.
 
     Parameters
     ----------
-    controller: ThreadSafeController
+    controller: Controller
         The thread safe Helios Easy Controls instance.
 
     Returns
@@ -125,7 +129,7 @@ def set_controller(hass: HomeAssistantType, controller: ThreadSafeController) ->
     hass.data[DOMAIN][DATA_CONTROLLER][controller.mac] = controller
 
 
-def get_controller(hass: HomeAssistantType, mac_address: str) -> ThreadSafeController:
+def get_controller(hass: HomeAssistantType, mac_address: str) -> Controller:
     '''
     Gets the controller for the given MAC address.
 
@@ -136,7 +140,7 @@ def get_controller(hass: HomeAssistantType, mac_address: str) -> ThreadSafeContr
 
     Returns
     -------
-    ThreadSafeController
+    Controller
         The thread safe controller associated to the given MAC address.
     '''
     return hass.data[DOMAIN][DATA_CONTROLLER][mac_address]
