@@ -1,9 +1,9 @@
 ''' The configuration flow for Helios Easy Controls integration. '''
 import logging
-from typing import Any, Dict
+from typing import Any, Union
 
 import voluptuous as vol
-from eazyctrl import EazyController
+from eazyctrl import AsyncEazyController
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
@@ -20,7 +20,7 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     '''
     VERSION = 1
 
-    async def async_step_user(self, user_info: Dict[str, Any]) -> FlowResult:
+    async def async_step_user(self, user_input: Union[dict[str, Any], None] = None) -> FlowResult:
         '''
         Handles the step when integration added from the UI.
         '''
@@ -29,16 +29,16 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_NAME): str
         })
 
-        if user_info is not None:
-            await self.async_set_unique_id(user_info[CONF_NAME])
+        if user_input is not None:
+            await self.async_set_unique_id(user_input[CONF_NAME])
             self._abort_if_unique_id_configured()
 
             try:
-                controller = EazyController(user_info[CONF_HOST])
-                device_type = controller.get_variable(
+                controller = AsyncEazyController(user_input[CONF_HOST])
+                device_type = await controller.get_variable(
                     VARIABLE_ARTICLE_DESCRIPTION.name, VARIABLE_ARTICLE_DESCRIPTION.size
                 )
-                mac_address = controller.get_variable(
+                mac_address = await controller.get_variable(
                     VARIABLE_MAC_ADDRESS.name, VARIABLE_MAC_ADDRESS.size
                 )
             # pylint: disable=broad-except
@@ -52,13 +52,13 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
             data = {
-                CONF_NAME: user_info[CONF_NAME],
-                CONF_HOST: user_info[CONF_HOST],
+                CONF_NAME: user_input[CONF_NAME],
+                CONF_HOST: user_input[CONF_HOST],
                 CONF_MAC: mac_address
             }
 
             return self.async_create_entry(
-                title=f'Helios {device_type} ({user_info[CONF_NAME]})', data=data
+                title=f'Helios {device_type} ({user_input[CONF_NAME]})', data=data
             )
 
         return self.async_show_form(

@@ -4,6 +4,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/laszlojakab/homeassistant-easycontrols)
 ![GitHub](https://img.shields.io/github/license/laszlojakab/homeassistant-easycontrols)
 ![GitHub all releases](https://img.shields.io/github/downloads/laszlojakab/homeassistant-easycontrols/total)
+[![HA integration usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.easycontrols.total)](https://analytics.home-assistant.io/custom_integrations.json)
 [![Donate](https://img.shields.io/badge/donate-Coffee-yellow.svg)](https://www.buymeacoffee.com/laszlojakab)
 
 Helios EasyControls Modbus TCP/IP integration for [Home Assistant](https://www.home-assistant.io/)

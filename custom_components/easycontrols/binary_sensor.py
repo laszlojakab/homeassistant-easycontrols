@@ -1,4 +1,3 @@
-# pylint: disable=bad-continuation
 '''
 The binary sensor module for Helios Easy Controls integration.
 '''
@@ -16,7 +15,7 @@ from homeassistant.helpers.typing import HomeAssistantType
 from . import get_controller, get_device_info
 from .const import VARIABLE_BYPASS, VARIABLE_INFO_FILTER_CHANGE
 from .modbus_variable import BoolModbusVariable
-from .threadsafe_controller import ThreadSafeController
+from .controller import Controller
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
 
     def __init__(
         self,
-        controller: ThreadSafeController,
+        controller: Controller,
         variable: BoolModbusVariable,
         description: BinarySensorEntityDescription
     ):
@@ -37,7 +36,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
 
         Parameters
         ----------
-        controller: ThreadSafeController
+        controller: Controller
             The thread safe Helios Easy Controls controller.
         variable: BoolModbusVariable
             The Modbus variable.
@@ -53,7 +52,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
         '''
         Updates the sensor value.
         '''
-        self._attr_is_on = self._controller.get_variable(self._variable)
+        self._attr_is_on = await self._controller.get_variable(self._variable)
         self._attr_available = self._attr_is_on is not None
 
     @property

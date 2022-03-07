@@ -1,32 +1,28 @@
-# pylint: disable=bad-continuation
 '''
 The module of Helios Easy Controls thread safe controller.
 '''
 import logging
 import re
-import threading
+from asyncio import Lock
 from typing import Any
 
-import eazyctrl
-from custom_components.easycontrols.modbus_variable import ModbusVariable
+from eazyctrl import AsyncEazyController
 
 from .const import (VARIABLE_ARTICLE_DESCRIPTION, VARIABLE_SERIAL_NUMBER,
                     VARIABLE_SOFTWARE_VERSION)
+from .modbus_variable import ModbusVariable
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class ThreadSafeController:
+class Controller:
     '''
     Represents a Helios Easy Controls controller.
-    The get_variable and set_variables methods are thread safe.
-    For more information please visit:
-    https://github.com/baradi09/eazyctrl#notes-on-concurrent-access-conflicts
     '''
 
     def __init__(self, device_name: str, host: str, mac: str):
         '''
-        Initialize a new instance of ThreadSafeController class.
+        Initialize a new instance of Controller class.
 
         Parameters
         ----------
@@ -39,13 +35,26 @@ class ThreadSafeController:
         '''
         self._host = host
         self._device_name = device_name
-        self._eazyctrl = eazyctrl.EazyController(host)
-        self._lock = threading.Lock()
+        self._eazyctrl = AsyncEazyController(host)
+        self._lock = Lock()
         self._mac = mac
         self._model = None
         self._version = None
         self._serial_number = None
         self._maximum_air_flow = None
+
+    async def init(self):
+        '''
+        Initialize device specific properties:
+        - model
+        - version
+        - serial_number
+        - maximum_air_flow
+        '''
+        self._model = await self.get_variable(VARIABLE_ARTICLE_DESCRIPTION)
+        self._version = await self.get_variable(VARIABLE_SOFTWARE_VERSION)
+        self._serial_number = await self.get_variable(VARIABLE_SERIAL_NUMBER)
+        self._maximum_air_flow = float(re.findall(r'\d+', self._model)[0])
 
     @property
     def device_name(self) -> str:
@@ -60,11 +69,6 @@ class ThreadSafeController:
         Gets the maximum airflow rate of the Helios device.
         The value is extracted from the model name.
         '''
-        if self._maximum_air_flow is None:
-            if self.model is None:
-                return None
-
-            self._maximum_air_flow = float(re.findall(r'\d+', self.model)[0])
         return self._maximum_air_flow
 
     @property
@@ -86,12 +90,6 @@ class ThreadSafeController:
         '''
         Gets the model of Helios device.
         '''
-        if self._model is None:
-            try:
-                self._model = self.get_variable(VARIABLE_ARTICLE_DESCRIPTION)
-            # pylint: disable=broad-except
-            except Exception as error:
-                _LOGGER.error('Failed to get the model of Helios device: %s', error)
         return self._model
 
     @property
@@ -99,13 +97,6 @@ class ThreadSafeController:
         '''
         Gets the software version of Helios device.
         '''
-        if self._version is None:
-            try:
-                self._version = self.get_variable(VARIABLE_SOFTWARE_VERSION)
-            # pylint: disable=broad-except
-            except Exception as error:
-                _LOGGER.error('Failed to get the software version of Helios device: %s', error)
-
         return self._version
 
     @property
@@ -113,16 +104,9 @@ class ThreadSafeController:
         '''
         Gets the serial number of Helios device.
         '''
-        if self._serial_number is None:
-            try:
-                self._serial_number = self.get_variable(VARIABLE_SERIAL_NUMBER)
-            # pylint: disable=broad-except
-            except Exception as error:
-                _LOGGER.error('Failed to get the serial number of Helios device: %s', error)
-
         return self._serial_number
 
-    def get_variable(
+    async def get_variable(
         self,
         variable: ModbusVariable,
     ) -> Any:
@@ -134,9 +118,9 @@ class ThreadSafeController:
         variable: ModbusVariable
             The variable to get.
         '''
-        with self._lock:
+        async with self._lock:
             _LOGGER.debug('Getting %s.', variable.name)
-            value = self._eazyctrl.get_variable(
+            value = await self._eazyctrl.get_variable(
                 variable.name,
                 variable.size,
                 variable.get_converter
@@ -144,7 +128,7 @@ class ThreadSafeController:
             _LOGGER.debug('%s value: %s', variable.name, value)
             return value
 
-    def set_variable(
+    async def set_variable(
         self,
         variable: ModbusVariable,
         value: Any
@@ -160,9 +144,10 @@ class ThreadSafeController:
             The value to set on Helios device.
 
         Returns
+        -------
         bool
             True if setting of variable succeeded otherwise False.
         '''
-        with self._lock:
+        async with self._lock:
             _LOGGER.debug('Setting %s to %s.', variable.name, value)
-            return self._eazyctrl.set_variable(variable.name, value, variable.set_converter)
+            return await self._eazyctrl.set_variable(variable.name, value, variable.set_converter)
