@@ -7,8 +7,8 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_OPENING, DEVICE_CLASS_PROBLEM, BinarySensorEntity,
     BinarySensorEntityDescription)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_MAC, ENTITY_CATEGORY_DIAGNOSTIC
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.const import CONF_MAC
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
@@ -98,7 +98,7 @@ async def async_setup_entry(
                 name=f'{controller.device_name} bypass',
                 icon='mdi:delta',
                 device_class=DEVICE_CLASS_OPENING,
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC
+                entity_category=EntityCategory.DIAGNOSTIC
             ),
         ),
         EasyControlBinarySensor(
@@ -109,7 +109,7 @@ async def async_setup_entry(
                 name=f'{controller.device_name} filter change',
                 icon='mdi:air-filter',
                 device_class=DEVICE_CLASS_PROBLEM,
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC
+                entity_category=EntityCategory.DIAGNOSTIC
             )
         )
     ])

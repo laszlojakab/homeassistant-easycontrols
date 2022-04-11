@@ -6,7 +6,7 @@
   "issue_tracker": "https://github.com/laszlojakab/homeassistant-easycontrols/issues",
   "dependencies": [],
   "config_flow": true,
-  "version": "0.5.5",
+  "version": "0.5.6-beta",
   "codeowners": ["@laszlojakab"],
   "requirements": ["eazyctrl==0.4"]
 }
