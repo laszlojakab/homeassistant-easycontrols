@@ -201,7 +201,7 @@ class EasyControlFlagSensor(SensorEntity):
         '''
         if value is None:
             return None
-        string = ''
+        string: str = ''
         if value != 0:
             for item in self._flags.items():
                 has_flag = (item[0] & value) == item[0]
@@ -209,6 +209,9 @@ class EasyControlFlagSensor(SensorEntity):
                     if string != '':
                         string += '\n'
                     string += item[1]
+        else:
+            string = '-'
+
         return string
 
     @property
