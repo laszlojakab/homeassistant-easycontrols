@@ -1,6 +1,7 @@
 '''Helios Easy Controls integration.'''
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
@@ -54,7 +55,10 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
             config_entry.data[CONF_MAC]
         )
 
-        await controller.init()
+        try:
+            await controller.init()
+        except Exception as exception:
+            raise ConfigEntryNotReady("Error during initialization") from exception
 
         set_controller(hass, controller)
 
