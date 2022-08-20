@@ -60,9 +60,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EasyControlsFanDevice(FanEntity):
-    """
-    Represents a fan entity which controls the Helios device.
-    """
+    """Represents a fan entity which controls the Helios device."""
 
     def __init__(self, controller: Controller):
         self.entity_description = FanEntityDescription(
@@ -105,20 +103,30 @@ class EasyControlsFanDevice(FanEntity):
 
     @property
     def preset_modes(self) -> List[str]:
+        """
+        Gets the supported preset modes.
+        """
         return [PRESET_AUTO, PRESET_PARTY, PRESET_STANDBY]
 
     @property
     def preset_mode(self) -> str:
+        """
+        Gets the current preset mode.
+        """
         return self._preset_mode
 
     @property
     def speed_count(self) -> int:
-        """Return the number of speeds the fan supports."""
+        """
+        Gets the number of speeds the fan supports.
+        """
         return len(ORDERED_NAMED_FAN_SPEEDS)
 
     @property
     def percentage(self) -> Optional[int]:
-        """Return the current speed percentage."""
+        """
+        Gets the current speed percentage.
+        """
         if self._speed is None or self._speed == 0:
             return 0
         else:
@@ -139,10 +147,8 @@ class EasyControlsFanDevice(FanEntity):
         """
         Sets the speed percentage of the fan.
 
-        Parameters
-        ----------
-        percentage: int
-            The speed percentage.
+        Args:
+            percentage: The speed percentage.
         """
         if percentage == 0:
             await self.async_turn_off()
@@ -159,7 +165,12 @@ class EasyControlsFanDevice(FanEntity):
             )
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        """Set the preset mode of the fan."""
+        """
+        Sets the preset mode of the fan.
+
+        Args:
+            preset_mode: The preset mode to set.
+        """
         if preset_mode == PRESET_AUTO:
             await self._controller.set_variable(
                 VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO
@@ -208,16 +219,17 @@ class EasyControlsFanDevice(FanEntity):
         )
         await self._controller.set_variable(VARIABLE_FAN_STAGE, 0)
 
-    async def start_party_mode(self, speed: str, duration: int):
+    async def start_party_mode(self, speed: str, duration: int) -> None:
         """
         Starts the party mode.
 
-        speed: str
-            The speed of the party mode.
-            Set to None to keep the previously set value.
-        duration: int
-            The duration of the party mode.
-            Set to None to keep the previously set value.
+        Args:
+            speed: str
+                The speed of the party mode.
+                Set to None to keep the previously set value.
+            duration: int
+                The duration of the party mode.
+                Set to None to keep the previously set value.
         """
         if speed is not None:
             await self._controller.set_variable(
@@ -269,15 +281,11 @@ class EasyControlsFanDevice(FanEntity):
         """
         Converts named fan speed to fan stage.
 
-        Parameters
-        ----------
-        speed: str
-            The named fan speed to convert.
+        Args:
+            speed: The named fan speed to convert.
 
-        Returns
-        -------
-        int
-            The fan stage belongs to speed.
+        Returns:
+            The converted fan stage.
         """
         return ORDERED_NAMED_FAN_SPEEDS.index(speed) + 1
 
@@ -285,15 +293,11 @@ class EasyControlsFanDevice(FanEntity):
         """
         Converts fan stage to named speed.
 
-        Parameters
-        ----------
-        fan_stage: int
-            The fan stage to convert.
+        Args:
+            fan_stage: The fan stage to convert.
 
-        Returns
-        -------
-        int
-            The named fan speed belongs to the fan stage.
+        Returns:
+            The speed percentage represented by the fan_stage.
         """
         return ORDERED_NAMED_FAN_SPEEDS[fan_stage - 1]
 
@@ -306,18 +310,12 @@ async def async_setup_entry(
     """
     Setup of Helios Easy Controls fan for the specified config_entry.
 
-    Parameters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    config_entry: homeassistant.helpers.typing.ConfigEntry
-        The config entry which is used to create sensors.
-    async_add_entities: homeassistant.helpers.entity_platform.AddEntitiesCallback
-        The callback which can be used to add new entities to Home Assistant.
+    Args:
+        hass: The Home Assistant instance.
+        config_entry:  The config entry which is used to create sensors.
+        async_add_entities: The callback which can be used to add new entities to Home Assistant.
 
-    Returns
-    -------
-    bool
+    Returns:
         The value indicates whether the setup succeeded.
     """
     _LOGGER.info("Setting up Helios EasyControls fan device.")

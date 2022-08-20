@@ -58,12 +58,10 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
 
     def __init__(self, controller: Controller):
         """
-        Initialize a new instance of EasyControlsAirFlowRateSensor class.
+        Initialize a new instance of `EasyControlsAirFlowRateSensor` class.
 
-        Parameters
-        ----------
-        controller: Controller
-            The thread safe Helios Easy Controls controller instance.
+        Args:
+            controller: The thread safe Helios Easy Controls controller instance.
         """
         self.entity_description = SensorEntityDescription(
             key="air_flow_rate",
@@ -109,12 +107,10 @@ class EasyControlsEfficiencySensor(SensorEntity):
 
     def __init__(self, controller: Controller):
         """
-        Initialize a new instance of EasyControlsEfficiencySensor class.
+        Initialize a new instance of `EasyControlsEfficiencySensor` class.
 
-        Parameters
-        ----------
-        controller: Controller
-            The thread safe Helios Easy Controls controller.
+        Args:
+            controller: The thread safe Helios Easy Controls controller.
         """
         self.entity_description = SensorEntityDescription(
             key="heat_recover_efficiency",
@@ -185,18 +181,13 @@ class EasyControlFlagSensor(SensorEntity):
         description: SensorEntityDescription,
     ):
         """
-        Initialize a new instance of EasyControlsFlagSensor class.
+        Initialize a new instance of `EasyControlsFlagSensor` class.
 
-        Parameters
-        controller: Controller
-            The thread safe Helios Easy Controls controller.
-        variable: IntModbusVariable
-            The Modbus flag variable.
-        flags: Dict[int, str]
-            The dictionary which holds the flag value as the key
-            and the related text as the value.
-        description: homeassistant.components.sensor.SensorEntityDescription
-            The sensor description.
+        Args:
+            controller: The thread safe Helios Easy Controls controller.
+            variable: The Modbus flag variable.
+            flags: The dictionary which holds the flag value as the key and the related text as the value.
+            description: The sensor entity description.
         """
         self.entity_description = description
         self._controller = controller
@@ -216,7 +207,7 @@ class EasyControlFlagSensor(SensorEntity):
     def _get_string(self, value: int) -> str:
         """
         Converts the specified integer to its
-        text representation
+        text representation.
         """
         if value is None:
             return None
@@ -254,16 +245,12 @@ class EasyControlsSensor(SensorEntity):
         description: SensorEntityDescription,
     ):
         """
-        Initialize a new instance of EasyControlSensor class.
+        Initialize a new instance of `EasyControlSensor` class.
 
-        Parameters
-        ----------
-        controller: Controller
-            The thread safe Helios Easy Controls controller.
-        variable: ModbusVariable
-            The Modbus variable.
-        description: homeassistant.components.sensor.SensorEntityDescription
-            The sensor description.
+        Args:
+            controller: The thread safe Helios Easy Controls controller.
+            variable: The Modbus variable.
+            description: The sensor description.
         """
         self.entity_description = description
         self._controller = controller
@@ -292,14 +279,11 @@ class EasyControlsVersionSensor(SensorEntity):
 
     def __init__(self, controller: Controller, name: str):
         """
-        Initialize a new instance of EasyControlVersionSensor class.
+        Initialize a new instance of `EasyControlVersionSensor` class.
 
-        Parameters
-        ----------
-        controller: Controller
-            The thread safe Helios Easy Controls controller
-        name: str
-            The name of the sensor.
+        Args:
+            controller: The thread safe Helios Easy Controls controller
+            name: The name of the sensor.
         """
         self.entity_description = SensorEntityDescription(
             key="version",
@@ -334,18 +318,12 @@ async def async_setup_entry(
     """
     Setup of Helios Easy Controls sensors for the specified config_entry.
 
-    Parameters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    config_entry: homeassistant.helpers.typing.ConfigEntry
-        The config entry which is used to create sensors.
-    async_add_entities: homeassistant.helpers.entity_platform.AddEntitiesCallback
-        The callback which can be used to add new entities to Home Assistant.
+    Args:
+        hass: The Home Assistant instance.
+        config_entry: The config entry which is used to create sensors.
+        async_add_entities: The callback which can be used to add new entities to Home Assistant.
 
-    Returns
-    -------
-    bool
+    Returns:
         The value indicates whether the setup succeeded.
     """
     _LOGGER.info("Setting up Helios EasyControls sensors.")

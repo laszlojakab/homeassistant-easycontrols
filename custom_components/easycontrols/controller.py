@@ -25,16 +25,12 @@ class Controller:
 
     def __init__(self, device_name: str, host: str, mac: str):
         """
-        Initialize a new instance of Controller class.
+        Initialize a new instance of `Controller` class.
 
-        Parameters
-        ----------
-        device_name: str
-            The name of the device.
-        host: str
-            The host name or the IP address of the Helios device.
-        mac: str
-            The MAC address of the Helios device.
+        Args:
+            device_name: The name of the device.
+            host: The host name or the IP address of the Helios device.
+            mac: The MAC address of the Helios device.
         """
         self._host = host
         self._device_name = device_name
@@ -116,10 +112,11 @@ class Controller:
         """
         Gets the specified variable value from the Helios device.
 
-        Parameters
-        ----------
-        variable: ModbusVariable
-            The variable to get.
+        Args:
+            variable: The variable to get.
+
+        Returns:
+            The requested variable value.
         """
         async with self._lock:
             _LOGGER.debug("Getting %s.", variable.name)
@@ -129,20 +126,15 @@ class Controller:
             _LOGGER.debug("%s value: %s", variable.name, value)
             return value
 
-    async def set_variable(self, variable: ModbusVariable, value: Any):
+    async def set_variable(self, variable: ModbusVariable, value: Any) -> bool:
         """
         Sets the specified variable value on the Helios device.
 
-        Parameters
-        ----------
-        variable: ModbusVariable
-            The variable to set on Helios device.
-        value: Any
-            The value to set on Helios device.
+        Args:
+            variable: The variable to set on Helios device.
+            value: The value to set on Helios device.
 
-        Returns
-        -------
-        bool
+        Returns:
             True if setting of variable succeeded otherwise False.
         """
         async with self._lock:

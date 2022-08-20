@@ -35,16 +35,15 @@ class EasyControlBinarySensor(BinarySensorEntity):
         description: BinarySensorEntityDescription,
     ):
         """
-        Initialize a new instance of EasyControlsBinarySensor class.
+        Initialize a new instance of `EasyControlsBinarySensor` class.
 
-        Parameters
-        ----------
-        controller: Controller
-            The thread safe Helios Easy Controls controller.
-        variable: BoolModbusVariable
-            The Modbus variable.
-        description: homeassistant.components.binary_sensor.BinarySensorEntityDescription
-            The binary sensor description.
+        Args:
+            controller:
+               The thread safe Helios Easy Controls controller.
+            variable:
+                The Modbus variable.
+            description:
+                The binary sensor description.
         """
         self.entity_description = description
         self._controller = controller
@@ -74,18 +73,15 @@ async def async_setup_entry(
     """
     Setup of Helios Easy Controls sensors for the specified config_entry.
 
-    Parameters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    config_entry: homeassistant.helpers.typing.ConfigEntry
-        The config entry which is used to create sensors.
-    async_add_entities: homeassistant.helpers.entity_platform.AddEntitiesCallback
-        The callback which can be used to add new entities to Home Assistant.
+    Args:
+        hass:
+            The Home Assistant instance.
+        config_entry:
+            The config entry which is used to create sensors.
+        async_add_entities:
+            The callback which can be used to add new entities to Home Assistant.
 
-    Returns
-    -------
-    bool
+    Returns:
         The value indicates whether the setup succeeded.
     """
     _LOGGER.info("Setting up Helios EasyControls binary sensors.")

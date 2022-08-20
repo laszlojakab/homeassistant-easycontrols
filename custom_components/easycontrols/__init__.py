@@ -15,16 +15,11 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """
     Set up the Helios Easy Controls component.
 
-    Parameters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    config: homeassistant.helpers.typing.ConfigType
-        The configuration.
+    Args:
+        hass: The Home Assistant instance.
+        config: The configuration.
 
-    Returns
-    -------
-    bool
+    Returns:
         The value indicates whether the setup succeeded.
     """
     hass.data[DOMAIN] = {DATA_CONTROLLER: {}}
@@ -35,16 +30,11 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     """
     Initialize the sensors and the fan based on the config entry represents a Helios device.
 
-    Parameters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    config_entry: homeassistant.config_entries.ConfigEntry
-        The config entry which contains information gathered by the config flow.
+    Args:
+        hass: The Home Assistant instance.
+        config_entry: The config entry which contains information gathered by the config flow.
 
-    Returns
-    -------
-    bool
+    Returns:
         The value indicates whether the setup succeeded.
     """
 
@@ -80,10 +70,11 @@ def get_device_info(controller: Controller) -> DeviceInfo:
     """
     Gets the device info based on the specified device name and the controller
 
-    Parameters
-    ----------
-    controller: Controller
-        The thread safe Helios Easy Controls controller.
+    Args:
+      controller: The thread safe Helios Easy Controls controller.
+
+    Returns:
+        The device information of the ventilation unit.
     """
     return DeviceInfo(
         connections={(device_registry.CONNECTION_NETWORK_MAC, controller.mac)},
@@ -101,18 +92,13 @@ def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
     Gets the value indicates whether a controller already registered
     in hass.data for the given MAC address
 
-    Paraemters
-    ----------
-    hass: homeassistant.helpers.typing.HomeAssistantType
-        The Home Assistant instance.
-    mac_address: str
-        The MAC address of the Helios device.
+    Args:
+        hass: The Home Assistant instance.
+        mac_address: The MAC address of the Helios device.
 
-    Returns
-    -------
-    bool
-        the value indicates whether a controller already registered
-        in hass.data for the given MAC address
+    Returns:
+        The value indicates whether a controller already registered
+        in hass.data for the given MAC address.
     """
     return mac_address in hass.data[DOMAIN][DATA_CONTROLLER]
 
@@ -121,14 +107,9 @@ def set_controller(hass: HomeAssistantType, controller: Controller) -> None:
     """
     Stores the specified controller in hass.data by its MAC address.
 
-    Parameters
-    ----------
-    controller: Controller
-        The thread safe Helios Easy Controls instance.
-
-    Returns
-    -------
-    None
+    Args:
+        hass: The Home Assistant instance.
+        controller: The thread safe Helios Easy Controls instance.
     """
     hass.data[DOMAIN][DATA_CONTROLLER][controller.mac] = controller
 
@@ -137,14 +118,11 @@ def get_controller(hass: HomeAssistantType, mac_address: str) -> Controller:
     """
     Gets the controller for the given MAC address.
 
-    Parameters
-    ----------
-    mac_address: str
-        The MAC address of the Helios device.
+    Args:
+        hass: The Home Assistant instance.
+        mac_address: The MAC address of the Helios device.
 
-    Returns
-    -------
-    Controller
-        The thread safe controller associated to the given MAC address.
+    Returns:
+        The thread safe Helios Easy Controls controller.
     """
     return hass.data[DOMAIN][DATA_CONTROLLER][mac_address]
