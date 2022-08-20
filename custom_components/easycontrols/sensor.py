@@ -18,8 +18,8 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
-from . import get_controller, get_device_info
-from .const import (
+from custom_components.easycontrols import get_controller, get_device_info
+from custom_components.easycontrols.const import (
     ERRORS,
     INFOS,
     VARIABLE_ERRORS,
@@ -45,8 +45,11 @@ from .const import (
     VARIABLE_WARNINGS,
     WARNINGS,
 )
-from .modbus_variable import IntModbusVariable, ModbusVariable
-from .controller import Controller
+from custom_components.easycontrols.controller import Controller
+from custom_components.easycontrols.modbus_variable import (
+    IntModbusVariable,
+    ModbusVariable,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

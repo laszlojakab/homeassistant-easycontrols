@@ -6,8 +6,8 @@ from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
-from .const import DATA_CONTROLLER, DOMAIN
-from .controller import Controller
+from custom_components.easycontrols.const import DATA_CONTROLLER, DOMAIN
+from custom_components.easycontrols.controller import Controller
 
 
 # pylint: disable=unused-argument

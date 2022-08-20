@@ -8,12 +8,12 @@ from typing import Any
 
 from eazyctrl import AsyncEazyController
 
-from .const import (
+from custom_components.easycontrols.const import (
     VARIABLE_ARTICLE_DESCRIPTION,
     VARIABLE_SERIAL_NUMBER,
     VARIABLE_SOFTWARE_VERSION,
 )
-from .modbus_variable import ModbusVariable
+from custom_components.easycontrols.modbus_variable import ModbusVariable
 
 _LOGGER = logging.getLogger(__name__)
 

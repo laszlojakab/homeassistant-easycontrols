@@ -21,8 +21,8 @@ from homeassistant.util.percentage import (
     percentage_to_ordered_list_item,
 )
 
-from . import get_controller, get_device_info
-from .const import (
+from custom_components.easycontrols import get_controller, get_device_info
+from custom_components.easycontrols.const import (
     DOMAIN,
     OPERATING_MODE_AUTO,
     OPERATING_MODE_MANUAL,
@@ -40,7 +40,7 @@ from .const import (
     VARIABLE_STANDBY_MODE,
     VARIABLE_SUPPLY_AIR_RPM,
 )
-from .controller import Controller
+from custom_components.easycontrols.controller import Controller
 
 SPEED_BASIC_VENTILATION = "basic"
 SPEED_RATED_VENTILATION = "rated"
