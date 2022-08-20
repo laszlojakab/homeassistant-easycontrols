@@ -1,4 +1,4 @@
-'''Helios Easy Controls integration.'''
+"""Helios Easy Controls integration."""
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -12,7 +12,7 @@ from .controller import Controller
 
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
-    '''
+    """
     Set up the Helios Easy Controls component.
 
     Parameters
@@ -26,13 +26,13 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     -------
     bool
         The value indicates whether the setup succeeded.
-    '''
+    """
     hass.data[DOMAIN] = {DATA_CONTROLLER: {}}
     return True
 
 
 async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
-    '''
+    """
     Initialize the sensors and the fan based on the config entry represents a Helios device.
 
     Parameters
@@ -46,13 +46,13 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     -------
     bool
         The value indicates whether the setup succeeded.
-    '''
+    """
 
     if not is_controller_exists(hass, config_entry.data[CONF_MAC]):
         controller = Controller(
             config_entry.data[CONF_NAME],
             config_entry.data[CONF_HOST],
-            config_entry.data[CONF_MAC]
+            config_entry.data[CONF_MAC],
         )
 
         try:
@@ -63,41 +63,41 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
         set_controller(hass, controller)
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, 'fan')
+        hass.config_entries.async_forward_entry_setup(config_entry, "fan")
     )
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, 'sensor')
+        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
     )
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, 'binary_sensor')
+        hass.config_entries.async_forward_entry_setup(config_entry, "binary_sensor")
     )
     return True
 
 
 def get_device_info(controller: Controller) -> DeviceInfo:
-    '''
+    """
     Gets the device info based on the specified device name and the controller
 
     Parameters
     ----------
     controller: Controller
         The thread safe Helios Easy Controls controller.
-    '''
+    """
     return DeviceInfo(
         connections={(device_registry.CONNECTION_NETWORK_MAC, controller.mac)},
         identifiers={(DOMAIN, controller.serial_number)},
         name=controller.device_name,
-        manufacturer='Helios',
+        manufacturer="Helios",
         model=controller.model,
         sw_version=controller.version,
-        configuration_url=f'http://{controller.host}'
+        configuration_url=f"http://{controller.host}",
     )
 
 
 def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
-    '''
+    """
     Gets the value indicates whether a controller already registered
     in hass.data for the given MAC address
 
@@ -113,12 +113,12 @@ def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
     bool
         the value indicates whether a controller already registered
         in hass.data for the given MAC address
-    '''
+    """
     return mac_address in hass.data[DOMAIN][DATA_CONTROLLER]
 
 
 def set_controller(hass: HomeAssistantType, controller: Controller) -> None:
-    '''
+    """
     Stores the specified controller in hass.data by its MAC address.
 
     Parameters
@@ -129,12 +129,12 @@ def set_controller(hass: HomeAssistantType, controller: Controller) -> None:
     Returns
     -------
     None
-    '''
+    """
     hass.data[DOMAIN][DATA_CONTROLLER][controller.mac] = controller
 
 
 def get_controller(hass: HomeAssistantType, mac_address: str) -> Controller:
-    '''
+    """
     Gets the controller for the given MAC address.
 
     Parameters
@@ -146,5 +146,5 @@ def get_controller(hass: HomeAssistantType, mac_address: str) -> Controller:
     -------
     Controller
         The thread safe controller associated to the given MAC address.
-    '''
+    """
     return hass.data[DOMAIN][DATA_CONTROLLER][mac_address]
