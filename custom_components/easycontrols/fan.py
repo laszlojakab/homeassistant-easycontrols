@@ -129,10 +129,8 @@ class EasyControlsFanDevice(FanEntity):
         """
         if self._speed is None or self._speed == 0:
             return 0
-        else:
-            return ordered_list_item_to_percentage(
-                ORDERED_NAMED_FAN_SPEEDS, self._speed
-            )
+
+        return ordered_list_item_to_percentage(ORDERED_NAMED_FAN_SPEEDS, self._speed)
 
     @property
     def is_on(self):
@@ -186,13 +184,12 @@ class EasyControlsFanDevice(FanEntity):
 
     async def async_turn_on(
         self,
-        speed: Optional[str] = None,
-        percentage: Optional[int] = None,
-        preset_mode: Optional[str] = None,
-        **kwargs: Any
+        percentage: int | None = None,
+        preset_mode: str | None = None,
+        **kwargs,
     ):
         """
-        Turns on the fan at the specific speed.
+        Turns on the fan at the specific speed or sets the specified preset mode.
         """
         if percentage is None and preset_mode is None:
             percentage = 50
@@ -277,7 +274,8 @@ class EasyControlsFanDevice(FanEntity):
         else:
             self._preset_mode = None
 
-    def speed_to_fan_stage(self, speed: str) -> int:
+    @classmethod
+    def speed_to_fan_stage(cls, speed: str) -> int:
         """
         Converts named fan speed to fan stage.
 
@@ -289,7 +287,8 @@ class EasyControlsFanDevice(FanEntity):
         """
         return ORDERED_NAMED_FAN_SPEEDS.index(speed) + 1
 
-    def fan_stage_to_speed(self, fan_stage: int) -> str:
+    @classmethod
+    def fan_stage_to_speed(cls, fan_stage: int) -> str:
         """
         Converts fan stage to named speed.
 

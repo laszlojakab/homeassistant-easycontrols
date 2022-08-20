@@ -17,7 +17,7 @@ from custom_components.easycontrols.modbus_variable import ModbusVariable
 
 _LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-instance-attributes
 class Controller:
     """
     Represents a Helios Easy Controls controller.

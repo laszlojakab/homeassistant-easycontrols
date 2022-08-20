@@ -189,7 +189,8 @@ class EasyControlFlagSensor(SensorEntity):
         Args:
             controller: The thread safe Helios Easy Controls controller.
             variable: The Modbus flag variable.
-            flags: The dictionary which holds the flag value as the key and the related text as the value.
+            flags: The dictionary which holds the flag value as the key and
+                   the related text as the value.
             description: The sensor entity description.
         """
         self.entity_description = description
