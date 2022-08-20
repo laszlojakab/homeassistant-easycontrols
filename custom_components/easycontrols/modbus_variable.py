@@ -3,7 +3,7 @@ The module contains Modbus variables.
 """
 from typing import Any, Callable
 
-
+# pylint: disable=too-few-public-methods
 class ModbusVariable:
     """
     Represents a Modbus variable.
@@ -31,6 +31,7 @@ class ModbusVariable:
         self.set_converter = set_converter
 
 
+# pylint: disable=too-few-public-methods
 class BoolModbusVariable(ModbusVariable):
     """
     Represents a boolean type Modbus variable.
@@ -46,6 +47,7 @@ class BoolModbusVariable(ModbusVariable):
         super().__init__(name, 1, lambda s: s == "1", lambda b: "1" if b else "0")
 
 
+# pylint: disable=too-few-public-methods
 class StrModbusVariable(ModbusVariable):
     """
     Represents a string type Modbus variable.
@@ -62,6 +64,7 @@ class StrModbusVariable(ModbusVariable):
         super().__init__(name, size)
 
 
+# pylint: disable=too-few-public-methods
 class IntModbusVariable(ModbusVariable):
     """
     Represents an integer type Modbus variable.
@@ -78,6 +81,7 @@ class IntModbusVariable(ModbusVariable):
         super().__init__(name, size, int, str)
 
 
+# pylint: disable=too-few-public-methods
 class OperationHoursModbusVariable(ModbusVariable):
     """
     Represents an operation hours type Modbus variable.
@@ -98,6 +102,7 @@ class OperationHoursModbusVariable(ModbusVariable):
         )
 
 
+# pylint: disable=too-few-public-methods
 class FloatModbusVariable(ModbusVariable):
     """
     Represents a float type Modbus variable.
@@ -114,6 +119,7 @@ class FloatModbusVariable(ModbusVariable):
         super().__init__(name, size, float, str)
 
 
+# pylint: disable=too-few-public-methods
 class FlagModbusVariable(ModbusVariable):
     """
     Represents a flag type Modbus variable.
