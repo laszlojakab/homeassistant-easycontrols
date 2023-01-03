@@ -3,6 +3,7 @@ import logging
 from typing import Dict
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     SensorEntity,
@@ -10,9 +11,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONF_MAC,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
+    CONF_MAC
 )
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -395,7 +394,7 @@ async def async_setup_entry(
                     name=f"{controller.device_name} outside air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
-                    device_class=DEVICE_CLASS_TEMPERATURE,
+                    device_class=SensorDeviceClass.TEMPERATURE,
                     state_class=STATE_CLASS_MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
@@ -408,7 +407,7 @@ async def async_setup_entry(
                     name=f"{controller.device_name} supply air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
-                    device_class=DEVICE_CLASS_TEMPERATURE,
+                    device_class=SensorDeviceClass.TEMPERATURE,
                     state_class=STATE_CLASS_MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
@@ -421,7 +420,7 @@ async def async_setup_entry(
                     name=f"{controller.device_name} extract air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
-                    device_class=DEVICE_CLASS_TEMPERATURE,
+                    device_class=SensorDeviceClass.TEMPERATURE,
                     state_class=STATE_CLASS_MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
@@ -434,7 +433,7 @@ async def async_setup_entry(
                     name=f"{controller.device_name} outgoing air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
-                    device_class=DEVICE_CLASS_TEMPERATURE,
+                    device_class=SensorDeviceClass.TEMPERATURE,
                     state_class=STATE_CLASS_MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
@@ -471,7 +470,7 @@ async def async_setup_entry(
                     name=f"{controller.device_name} extract air relative humidity",
                     icon="mdi:water-percent",
                     native_unit_of_measurement="%",
-                    device_class=DEVICE_CLASS_HUMIDITY,
+                    device_class=SensorDeviceClass.HUMIDITY,
                     state_class=STATE_CLASS_MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),

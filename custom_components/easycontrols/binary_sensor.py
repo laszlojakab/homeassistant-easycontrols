@@ -4,8 +4,7 @@ The binary sensor module for Helios Easy Controls integration.
 import logging
 
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_OPENING,
-    DEVICE_CLASS_PROBLEM,
+    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -100,7 +99,7 @@ async def async_setup_entry(
                     key="bypass",
                     name=f"{controller.device_name} bypass",
                     icon="mdi:delta",
-                    device_class=DEVICE_CLASS_OPENING,
+                    device_class=BinarySensorDeviceClass.OPENING,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
@@ -111,7 +110,7 @@ async def async_setup_entry(
                     key="filter_change",
                     name=f"{controller.device_name} filter change",
                     icon="mdi:air-filter",
-                    device_class=DEVICE_CLASS_PROBLEM,
+                    device_class=BinarySensorDeviceClass.PROBLEM,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
