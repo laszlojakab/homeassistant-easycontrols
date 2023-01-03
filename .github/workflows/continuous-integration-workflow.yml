@@ -1,0 +1,21 @@
+name: CI
+on:
+  push: 
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linters:
+    name: Linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      - run: pip3 install homeassistant
+      - run: pip3 install eazyctrl      
+      - run: pip3 install pylint
+      - run: pylint ./custom_components/easycontrols/
