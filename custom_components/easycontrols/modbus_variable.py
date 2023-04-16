@@ -1,34 +1,38 @@
 """
 The module contains Modbus variables.
 """
-from typing import Any, Callable
+from dataclasses import dataclass
+from typing import Any, Callable, Final
+
+from typing_extensions import Self
+
 
 # pylint: disable=too-few-public-methods
+@dataclass
 class ModbusVariable:
     """
     Represents a Modbus variable.
     """
 
-    def __init__(
-        self,
-        name: str,
-        size: int,
-        get_converter: Callable[[str], Any] = None,
-        set_converter: Callable[[Any], str] = None,
-    ):
-        """
-        Initialize a new instance of `ModbusVariable` class.
+    # pylint: disable=invalid-name
+    name: Final[str]
+    """ The Modbus variable name. """
 
-        Args:
-            name: The Modbus variable name.
-            size: The length of the variable value.
-            get_converter: The converter function to convert value received from device.
-            set_converter:  The converter function to convert value send to device.
-        """
-        self.name = name
-        self.size = size
-        self.get_converter = get_converter
-        self.set_converter = set_converter
+    # pylint: disable=invalid-name
+    size: Final[int]
+    """ The length of the variable value. """
+
+    get_converter: Final[Callable[[str], Any]] | None = None
+    """ The converter function to convert value received from device. """
+
+    set_converter: Final[Callable[[Any], str]] | None = None
+    """ The converter function to convert value send to device. """
+
+    def __repr__(self) -> str:
+        return f"{self.name} [{self.size}]"
+
+    def __lt__(self: Self, other: Self) -> bool:
+        return self.name < other.name
 
 
 # pylint: disable=too-few-public-methods
