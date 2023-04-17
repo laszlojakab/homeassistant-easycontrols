@@ -11,6 +11,7 @@ from custom_components.easycontrols.modbus_variable import (
 DOMAIN = "easycontrols"
 
 DATA_CONTROLLER = "controller"
+DATA_COORDINATOR = "coordinator"
 
 INFO_FILTER_CHANGE_FLAG = 0x01
 
