@@ -1,6 +1,7 @@
 """ The sensor module for Helios Easy Controls integration. """
 import logging
-from typing import Dict
+from typing import Any, Dict
+from typing_extensions import Self
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -12,11 +13,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_MAC
 )
+from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
-from custom_components.easycontrols import get_controller, get_device_info
+from custom_components.easycontrols import get_controller, get_device_info, get_coordinator
 from custom_components.easycontrols.const import (
     ERRORS,
     INFOS,
@@ -44,6 +46,7 @@ from custom_components.easycontrols.const import (
     WARNINGS,
 )
 from custom_components.easycontrols.controller import Controller
+from custom_components.easycontrols.coordinator import EasyControlsDataUpdateCoordinator
 from custom_components.easycontrols.modbus_variable import (
     IntModbusVariable,
     ModbusVariable,
@@ -52,52 +55,71 @@ from custom_components.easycontrols.modbus_variable import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-instance-attributes
 class EasyControlsAirFlowRateSensor(SensorEntity):
     """
     Represents a sensor which provides current airflow rate.
     """
 
-    def __init__(self, controller: Controller):
+    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsAirFlowRateSensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller instance.
+            coordinator:
+                The coordinator instance.
         """
         self.entity_description = SensorEntityDescription(
             key="air_flow_rate",
-            name=f"{controller.device_name} airflow rate",
+            name=f"{coordinator.device_name} airflow rate",
             state_class=SensorStateClass.MEASUREMENT,
             icon="mdi:air-filter",
             native_unit_of_measurement="m³/h",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        self._controller = controller
-        self._attr_unique_id = self._controller.mac + self.name
-
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        percentage_fan_speed = await self._controller.get_variable(
-            VARIABLE_PERCENTAGE_FAN_SPEED
+        self._coordinator = coordinator
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._percentage_fan_speed: int | None = None
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
         )
 
-        if percentage_fan_speed is None:
+        def update_listener(variable: ModbusVariable[Any], value: Any):
+            self._value_updated(variable, value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(
+            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
+        )
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(
+            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
+        )
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+        if variable == VARIABLE_PERCENTAGE_FAN_SPEED:
+            self._percentage_fan_speed = value
+
+        if self._percentage_fan_speed is None:
             self._attr_native_value = None
         else:
             self._attr_native_value = (
-                self._controller.maximum_air_flow * percentage_fan_speed / 100.0
+                self._coordinator.maximum_air_flow * self._percentage_fan_speed / 100.0
             )
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+        self.schedule_update_ha_state(False)
 
 
 class EasyControlsEfficiencySensor(SensorEntity):
@@ -331,6 +353,7 @@ async def async_setup_entry(
     _LOGGER.info("Setting up Helios EasyControls sensors.")
 
     controller = get_controller(hass, config_entry.data[CONF_MAC])
+    coordinator = get_coordinator(hass, config_entry.data[CONF_MAC])
 
     async_add_entities(
         [
@@ -590,7 +613,7 @@ async def async_setup_entry(
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
-            EasyControlsAirFlowRateSensor(controller),
+            EasyControlsAirFlowRateSensor(coordinator),
             EasyControlsEfficiencySensor(controller),
         ]
     )
