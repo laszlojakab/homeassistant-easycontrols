@@ -10,9 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_MAC
-)
+from homeassistant.const import CONF_MAC
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -230,35 +228,58 @@ class EasyControlFlagSensor(SensorEntity):
 
     def __init__(
         self,
-        controller: Controller,
+        coordinator: EasyControlsDataUpdateCoordinator,
         variable: IntModbusVariable,
-        flags: Dict[int, str],
+        flags: dict[int, str],
         description: SensorEntityDescription,
     ):
         """
         Initialize a new instance of `EasyControlsFlagSensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller.
-            variable: The Modbus flag variable.
-            flags: The dictionary which holds the flag value as the key and
-                   the related text as the value.
-            description: The sensor entity description.
+            coordinator:
+                The coordinator instance.
+            variable:
+                The Modbus flag variable.
+            flags:
+                The dictionary which holds the flag value as the key and
+                the related text as the value.
+            description:
+                The sensor entity description.
         """
         self.entity_description = description
-        self._controller = controller
+        self._coordinator = coordinator
         self._variable = variable
         self._flags = flags
-        self._attr_unique_id = self._controller.mac + self.name
-
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        self._attr_native_value = self._get_string(
-            await self._controller.get_variable(self._variable)
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
         )
+
+        # pylint: disable=unused-argument
+        def update_listener(variable: IntModbusVariable, value: int):
+            self._value_updated(value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(self._variable, self._update_listener)
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(self._variable, self._update_listener)
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, value: int):
+        self._attr_native_value = self._get_string(value)
         self._attr_available = self._attr_native_value is not None
+        self.schedule_update_ha_state(False)
 
     def _get_string(self, value: int) -> str:
         """
@@ -280,12 +301,6 @@ class EasyControlFlagSensor(SensorEntity):
 
         return string
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
 
 
 class EasyControlsSensor(SensorEntity):
@@ -613,34 +628,34 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_ERRORS,
                 ERRORS,
                 SensorEntityDescription(
                     key="ERRORS",
-                    name=f"{controller.device_name} errors",
+                    name=f"{coordinator.device_name} errors",
                     icon="mdi:alert-circle",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_WARNINGS,
                 WARNINGS,
                 SensorEntityDescription(
                     key="WARNINGS",
-                    name=f"{controller.device_name} warnings",
+                    name=f"{coordinator.device_name} warnings",
                     icon="mdi:alert-circle-outline",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_INFOS,
                 INFOS,
                 SensorEntityDescription(
                     key="INFORMATION",
-                    name=f"{controller.device_name} information",
+                    name=f"{coordinator.device_name} information",
                     icon="mdi:information-outline",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
