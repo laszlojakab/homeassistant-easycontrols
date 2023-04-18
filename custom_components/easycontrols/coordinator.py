@@ -59,7 +59,6 @@ from custom_components.easycontrols.const import (
     VARIABLE_TEMPERATURE_SUPPLY_AIR,
     VARIABLE_WARNINGS,
 )
-from custom_components.easycontrols.controller import Controller
 from custom_components.easycontrols.modbus_variable import (
     BoolModbusVariable,
     FlagModbusVariable,

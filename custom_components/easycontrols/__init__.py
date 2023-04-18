@@ -1,18 +1,12 @@
 """Helios Easy Controls integration."""
 import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import device_registry
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
-from custom_components.easycontrols.const import (
-    DATA_CONTROLLER,
-    DATA_COORDINATOR,
-    DOMAIN,
-)
-from custom_components.easycontrols.controller import Controller
+from custom_components.easycontrols.const import DATA_COORDINATOR, DOMAIN
 from custom_components.easycontrols.coordinator import (
     EasyControlsDataUpdateCoordinator,
     create_coordinator,
@@ -32,7 +26,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     Returns:
         The value indicates whether the setup succeeded.
     """
-    hass.data[DOMAIN] = {DATA_CONTROLLER: {}, DATA_COORDINATOR: {}}
+    hass.data[DOMAIN] = {DATA_COORDINATOR: {}}
     return True
 
 
@@ -49,14 +43,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     """
 
     if not is_coordinator_exists(hass, config_entry.data[CONF_MAC]):
-        controller = Controller(
-            config_entry.data[CONF_NAME],
-            config_entry.data[CONF_HOST],
-            config_entry.data[CONF_MAC],
-        )
-
         try:
-            await controller.init()
             coordinator = await create_coordinator(
                 hass,
                 config_entry.data[CONF_NAME],
@@ -66,7 +53,6 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
             _LOGGER.error(exception)
             raise ConfigEntryNotReady("Error during initialization") from exception
 
-        set_controller(hass, controller)
         set_coordinator(hass, coordinator)
 
     hass.async_create_task(
@@ -105,48 +91,6 @@ async def async_unload_entry(
     await hass.config_entries.async_forward_entry_unload(config_entry, "binary_sensor")
 
     return True
-
-
-
-def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
-    """
-    Gets the value indicates whether a controller already registered
-    in hass.data for the given MAC address
-
-    Args:
-        hass: The Home Assistant instance.
-        mac_address: The MAC address of the Helios device.
-
-    Returns:
-        The value indicates whether a controller already registered
-        in hass.data for the given MAC address.
-    """
-    return mac_address in hass.data[DOMAIN][DATA_CONTROLLER]
-
-
-def set_controller(hass: HomeAssistantType, controller: Controller) -> None:
-    """
-    Stores the specified controller in hass.data by its MAC address.
-
-    Args:
-        hass: The Home Assistant instance.
-        controller: The thread safe Helios Easy Controls instance.
-    """
-    hass.data[DOMAIN][DATA_CONTROLLER][controller.mac] = controller
-
-
-def get_controller(hass: HomeAssistantType, mac_address: str) -> Controller:
-    """
-    Gets the controller for the given MAC address.
-
-    Args:
-        hass: The Home Assistant instance.
-        mac_address: The MAC address of the Helios device.
-
-    Returns:
-        The thread safe Helios Easy Controls controller.
-    """
-    return hass.data[DOMAIN][DATA_CONTROLLER][mac_address]
 
 
 def is_coordinator_exists(hass: HomeAssistantType, mac_address: str) -> bool:
