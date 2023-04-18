@@ -35,6 +35,7 @@ from custom_components.easycontrols.const import (
     VARIABLE_PERCENTAGE_FAN_SPEED,
     VARIABLE_PERCENTAGE_PREHEATER,
     VARIABLE_SOFTWARE_VERSION,
+    VARIABLE_STANDBY_MODE_REMAINING_TIME,
     VARIABLE_SUPPLY_AIR_FAN_STAGE,
     VARIABLE_SUPPLY_AIR_RPM,
     VARIABLE_TEMPERATURE_EXTRACT_AIR,
@@ -538,6 +539,17 @@ async def async_setup_entry(
                 SensorEntityDescription(
                     key="party_mode_remaining_time",
                     name=f"{coordinator.device_name} party mode remaining time",
+                    icon="mdi:clock",
+                    native_unit_of_measurement="min",
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
+            ),
+            EasyControlsSensor(
+                coordinator,
+                VARIABLE_STANDBY_MODE_REMAINING_TIME,
+                SensorEntityDescription(
+                    key="standby_mode_remaining_time",
+                    name=f"{coordinator.device_name} standby mode remaining time",
                     icon="mdi:clock",
                     native_unit_of_measurement="min",
                     entity_category=EntityCategory.DIAGNOSTIC,
