@@ -107,26 +107,6 @@ async def async_unload_entry(
     return True
 
 
-def get_device_info(controller: Controller) -> DeviceInfo:
-    """
-    Gets the device info based on the specified device name and the controller
-
-    Args:
-      controller: The thread safe Helios Easy Controls controller.
-
-    Returns:
-        The device information of the ventilation unit.
-    """
-    return DeviceInfo(
-        connections={(device_registry.CONNECTION_NETWORK_MAC, controller.mac)},
-        identifiers={(DOMAIN, controller.serial_number)},
-        name=controller.device_name,
-        manufacturer="Helios",
-        model=controller.model,
-        sw_version=controller.version,
-        configuration_url=f"http://{controller.host}",
-    )
-
 
 def is_controller_exists(hass: HomeAssistantType, mac_address: str) -> bool:
     """
