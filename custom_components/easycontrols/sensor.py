@@ -128,7 +128,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
     For more details: https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     """
 
-    def __init__(self, controller: Controller):
+    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsEfficiencySensor` class.
 
@@ -137,41 +137,79 @@ class EasyControlsEfficiencySensor(SensorEntity):
         """
         self.entity_description = SensorEntityDescription(
             key="heat_recover_efficiency",
-            name=f"{controller.device_name} heat recovery efficiency",
+            name=f"{coordinator.device_name} heat recovery efficiency",
             state_class=SensorStateClass.MEASUREMENT,
             icon="mdi:percent",
             native_unit_of_measurement="%",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        self._controller = controller
-        self._attr_unique_id = self._controller.mac + self.name
+        self._coordinator = coordinator
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._outside_air_temperature: float | None = None
+        self._supply_air_temperature: float | None = None
+        self._extract_air_temperature: float | None = None
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
+        )
 
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        outside_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_OUTSIDE_AIR
+        def update_listener(variable: ModbusVariable[Any], value: Any):
+            self._value_updated(variable, value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
         )
-        supply_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_SUPPLY_AIR
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
         )
-        extract_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_EXTRACT_AIR
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
         )
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
+        )
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
+        )
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
+        )
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+        if variable == VARIABLE_TEMPERATURE_OUTSIDE_AIR:
+            self._outside_air_temperature = value
+        elif variable == VARIABLE_TEMPERATURE_SUPPLY_AIR:
+            self._supply_air_temperature = value
+        elif variable == VARIABLE_TEMPERATURE_EXTRACT_AIR:
+            self._extract_air_temperature = value
 
         if (
-            extract_air_temperature is None
-            or outside_air_temperature is None
-            or supply_air_temperature is None
+            self._outside_air_temperature is None
+            or self._supply_air_temperature is None
+            or self._extract_air_temperature is None
         ):
             self._attr_native_value = None
         else:
-            if abs(extract_air_temperature - outside_air_temperature) > 0.5:
+            if abs(self._extract_air_temperature - self._outside_air_temperature) > 0.5:
                 self._attr_native_value = abs(
                     round(
-                        (supply_air_temperature - outside_air_temperature)
-                        / (extract_air_temperature - outside_air_temperature)
+                        (self._supply_air_temperature - self._outside_air_temperature)
+                        / (
+                            self._extract_air_temperature
+                            - self._outside_air_temperature
+                        )
                         * 100,
                         2,
                     )
@@ -180,13 +218,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
                 self._attr_native_value = 0
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+        self.schedule_update_ha_state(False)
 
 
 class EasyControlFlagSensor(SensorEntity):
@@ -614,7 +646,7 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsAirFlowRateSensor(coordinator),
-            EasyControlsEfficiencySensor(controller),
+            EasyControlsEfficiencySensor(coordinator),
         ]
     )
 
