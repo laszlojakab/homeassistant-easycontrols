@@ -1,43 +1,49 @@
 """
 The module contains Modbus variables.
 """
-from typing import Any, Callable
+from dataclasses import dataclass
+from typing import Callable, Final, Generic, TypeVar
 
-# pylint: disable=too-few-public-methods
-class ModbusVariable:
+from typing_extensions import Self
+
+# pylint: disable=invalid-name
+TModBusVariableValue = TypeVar("TModBusVariableValue")
+
+
+@dataclass
+class ModbusVariable(Generic[TModBusVariableValue]):
     """
     Represents a Modbus variable.
     """
 
-    def __init__(
-        self,
-        name: str,
-        size: int,
-        get_converter: Callable[[str], Any] = None,
-        set_converter: Callable[[Any], str] = None,
-    ):
-        """
-        Initialize a new instance of `ModbusVariable` class.
+    # pylint: disable=invalid-name
+    name: Final[str]
+    """ The Modbus variable name. """
 
-        Args:
-            name: The Modbus variable name.
-            size: The length of the variable value.
-            get_converter: The converter function to convert value received from device.
-            set_converter:  The converter function to convert value send to device.
-        """
-        self.name = name
-        self.size = size
-        self.get_converter = get_converter
-        self.set_converter = set_converter
+    # pylint: disable=invalid-name
+    size: Final[int]
+    """ The length of the variable value. """
+
+    get_converter: Final[Callable[[str], TModBusVariableValue] | None] = None
+    """ The converter function to convert value received from device. """
+
+    set_converter: Final[Callable[[TModBusVariableValue], str] | None] = None
+    """ The converter function to convert value send to device. """
+
+    def __repr__(self) -> str:
+        return f"{self.name} [{self.size}]"
+
+    def __lt__(self: Self, other: Self) -> bool:
+        return self.name < other.name
 
 
 # pylint: disable=too-few-public-methods
-class BoolModbusVariable(ModbusVariable):
+class BoolModbusVariable(ModbusVariable[bool]):
     """
     Represents a boolean type Modbus variable.
     """
 
-    def __init__(self, name: str):
+    def __init__(self: Self, name: str):
         """
         Initialize a new instance of `BoolModbusVariable` class.
 
@@ -48,12 +54,12 @@ class BoolModbusVariable(ModbusVariable):
 
 
 # pylint: disable=too-few-public-methods
-class StrModbusVariable(ModbusVariable):
+class StrModbusVariable(ModbusVariable[str]):
     """
     Represents a string type Modbus variable.
     """
 
-    def __init__(self, name: str, size: int):
+    def __init__(self: Self, name: str, size: int):
         """
         Initialize a new instance of `StrModbusVariable` class.
 
@@ -65,12 +71,12 @@ class StrModbusVariable(ModbusVariable):
 
 
 # pylint: disable=too-few-public-methods
-class IntModbusVariable(ModbusVariable):
+class IntModbusVariable(ModbusVariable[int]):
     """
     Represents an integer type Modbus variable.
     """
 
-    def __init__(self, name: str, size: int):
+    def __init__(self: Self, name: str, size: int):
         """
         Initialize a new instance of `IntModbusVariable` class.
 
@@ -82,14 +88,14 @@ class IntModbusVariable(ModbusVariable):
 
 
 # pylint: disable=too-few-public-methods
-class OperationHoursModbusVariable(ModbusVariable):
+class OperationHoursModbusVariable(ModbusVariable[float]):
     """
     Represents an operation hours type Modbus variable.
 
     Operation hours value is in minutes, it converts to hours.
     """
 
-    def __init__(self, name: str, size: int):
+    def __init__(self: Self, name: str, size: int):
         """
         Initialize a new instance of `OperationHoursModbusVariable` class.
 
@@ -103,12 +109,12 @@ class OperationHoursModbusVariable(ModbusVariable):
 
 
 # pylint: disable=too-few-public-methods
-class FloatModbusVariable(ModbusVariable):
+class FloatModbusVariable(ModbusVariable[float]):
     """
     Represents a float type Modbus variable.
     """
 
-    def __init__(self, name: str, size: int):
+    def __init__(self: Self, name: str, size: int):
         """
         Initialize a new instance of `FloatModbusVariable` class.
 
@@ -120,12 +126,12 @@ class FloatModbusVariable(ModbusVariable):
 
 
 # pylint: disable=too-few-public-methods
-class FlagModbusVariable(ModbusVariable):
+class FlagModbusVariable(ModbusVariable[bool]):
     """
     Represents a flag type Modbus variable.
     """
 
-    def __init__(self, name: str, size: int, flag: int):
+    def __init__(self: Self, name: str, size: int, flag: int):
         """
         Initialize a new instance of `FlagModbusVariable`.
 

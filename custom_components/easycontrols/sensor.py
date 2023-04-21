@@ -1,22 +1,22 @@
 """ The sensor module for Helios Easy Controls integration. """
 import logging
-from typing import Dict
+from typing import Any, Generic, TypeVar
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
-    SensorStateClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_MAC
-)
+from homeassistant.const import CONF_MAC
+from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
+from typing_extensions import Self
 
-from custom_components.easycontrols import get_controller, get_device_info
+from custom_components.easycontrols import get_coordinator
 from custom_components.easycontrols.const import (
     ERRORS,
     INFOS,
@@ -34,6 +34,7 @@ from custom_components.easycontrols.const import (
     VARIABLE_PERCENTAGE_AFTERHEATER,
     VARIABLE_PERCENTAGE_FAN_SPEED,
     VARIABLE_PERCENTAGE_PREHEATER,
+    VARIABLE_SOFTWARE_VERSION,
     VARIABLE_SUPPLY_AIR_FAN_STAGE,
     VARIABLE_SUPPLY_AIR_RPM,
     VARIABLE_TEMPERATURE_EXTRACT_AIR,
@@ -43,7 +44,7 @@ from custom_components.easycontrols.const import (
     VARIABLE_WARNINGS,
     WARNINGS,
 )
-from custom_components.easycontrols.controller import Controller
+from custom_components.easycontrols.coordinator import EasyControlsDataUpdateCoordinator
 from custom_components.easycontrols.modbus_variable import (
     IntModbusVariable,
     ModbusVariable,
@@ -52,52 +53,71 @@ from custom_components.easycontrols.modbus_variable import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-instance-attributes
 class EasyControlsAirFlowRateSensor(SensorEntity):
     """
     Represents a sensor which provides current airflow rate.
     """
 
-    def __init__(self, controller: Controller):
+    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsAirFlowRateSensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller instance.
+            coordinator:
+                The coordinator instance.
         """
         self.entity_description = SensorEntityDescription(
             key="air_flow_rate",
-            name=f"{controller.device_name} airflow rate",
+            name=f"{coordinator.device_name} airflow rate",
             state_class=SensorStateClass.MEASUREMENT,
             icon="mdi:air-filter",
             native_unit_of_measurement="m³/h",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        self._controller = controller
-        self._attr_unique_id = self._controller.mac + self.name
-
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        percentage_fan_speed = await self._controller.get_variable(
-            VARIABLE_PERCENTAGE_FAN_SPEED
+        self._coordinator = coordinator
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._percentage_fan_speed: int | None = None
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
         )
 
-        if percentage_fan_speed is None:
+        def update_listener(variable: ModbusVariable[Any], value: Any):
+            self._value_updated(variable, value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(
+            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
+        )
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(
+            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
+        )
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+        if variable == VARIABLE_PERCENTAGE_FAN_SPEED:
+            self._percentage_fan_speed = value
+
+        if self._percentage_fan_speed is None:
             self._attr_native_value = None
         else:
             self._attr_native_value = (
-                self._controller.maximum_air_flow * percentage_fan_speed / 100.0
+                self._coordinator.maximum_air_flow * self._percentage_fan_speed / 100.0
             )
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+        self.schedule_update_ha_state(False)
 
 
 class EasyControlsEfficiencySensor(SensorEntity):
@@ -106,7 +126,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
     For more details: https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     """
 
-    def __init__(self, controller: Controller):
+    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsEfficiencySensor` class.
 
@@ -115,41 +135,79 @@ class EasyControlsEfficiencySensor(SensorEntity):
         """
         self.entity_description = SensorEntityDescription(
             key="heat_recover_efficiency",
-            name=f"{controller.device_name} heat recovery efficiency",
+            name=f"{coordinator.device_name} heat recovery efficiency",
             state_class=SensorStateClass.MEASUREMENT,
             icon="mdi:percent",
             native_unit_of_measurement="%",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        self._controller = controller
-        self._attr_unique_id = self._controller.mac + self.name
+        self._coordinator = coordinator
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._outside_air_temperature: float | None = None
+        self._supply_air_temperature: float | None = None
+        self._extract_air_temperature: float | None = None
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
+        )
 
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        outside_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_OUTSIDE_AIR
+        def update_listener(variable: ModbusVariable[Any], value: Any):
+            self._value_updated(variable, value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
         )
-        supply_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_SUPPLY_AIR
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
         )
-        extract_air_temperature = await self._controller.get_variable(
-            VARIABLE_TEMPERATURE_EXTRACT_AIR
+        self._coordinator.add_listener(
+            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
         )
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
+        )
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
+        )
+        self._coordinator.remove_listener(
+            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
+        )
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+        if variable == VARIABLE_TEMPERATURE_OUTSIDE_AIR:
+            self._outside_air_temperature = value
+        elif variable == VARIABLE_TEMPERATURE_SUPPLY_AIR:
+            self._supply_air_temperature = value
+        elif variable == VARIABLE_TEMPERATURE_EXTRACT_AIR:
+            self._extract_air_temperature = value
 
         if (
-            extract_air_temperature is None
-            or outside_air_temperature is None
-            or supply_air_temperature is None
+            self._outside_air_temperature is None
+            or self._supply_air_temperature is None
+            or self._extract_air_temperature is None
         ):
             self._attr_native_value = None
         else:
-            if abs(extract_air_temperature - outside_air_temperature) > 0.5:
+            if abs(self._extract_air_temperature - self._outside_air_temperature) > 0.5:
                 self._attr_native_value = abs(
                     round(
-                        (supply_air_temperature - outside_air_temperature)
-                        / (extract_air_temperature - outside_air_temperature)
+                        (self._supply_air_temperature - self._outside_air_temperature)
+                        / (
+                            self._extract_air_temperature
+                            - self._outside_air_temperature
+                        )
                         * 100,
                         2,
                     )
@@ -158,13 +216,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
                 self._attr_native_value = 0
 
         self._attr_available = self._attr_native_value is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+        self.schedule_update_ha_state(False)
 
 
 class EasyControlFlagSensor(SensorEntity):
@@ -176,35 +228,58 @@ class EasyControlFlagSensor(SensorEntity):
 
     def __init__(
         self,
-        controller: Controller,
+        coordinator: EasyControlsDataUpdateCoordinator,
         variable: IntModbusVariable,
-        flags: Dict[int, str],
+        flags: dict[int, str],
         description: SensorEntityDescription,
     ):
         """
         Initialize a new instance of `EasyControlsFlagSensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller.
-            variable: The Modbus flag variable.
-            flags: The dictionary which holds the flag value as the key and
-                   the related text as the value.
-            description: The sensor entity description.
+            coordinator:
+                The coordinator instance.
+            variable:
+                The Modbus flag variable.
+            flags:
+                The dictionary which holds the flag value as the key and
+                the related text as the value.
+            description:
+                The sensor entity description.
         """
         self.entity_description = description
-        self._controller = controller
+        self._coordinator = coordinator
         self._variable = variable
         self._flags = flags
-        self._attr_unique_id = self._controller.mac + self.name
-
-    async def async_update(self) -> None:
-        """
-        Updates the sensor value.
-        """
-        self._attr_native_value = self._get_string(
-            await self._controller.get_variable(self._variable)
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
         )
+
+        # pylint: disable=unused-argument
+        def update_listener(variable: IntModbusVariable, value: int):
+            self._value_updated(value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(self._variable, self._update_listener)
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(self._variable, self._update_listener)
+        return await super().async_will_remove_from_hass()
+
+    @property
+    def should_poll(self: Self) -> bool:
+        return False
+
+    def _value_updated(self: Self, value: int):
+        self._attr_native_value = self._get_string(value)
         self._attr_available = self._attr_native_value is not None
+        self.schedule_update_ha_state(False)
 
     def _get_string(self, value: int) -> str:
         """
@@ -226,90 +301,66 @@ class EasyControlFlagSensor(SensorEntity):
 
         return string
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+
+# pylint: disable=invalid-name
+T = TypeVar("T")
 
 
-class EasyControlsSensor(SensorEntity):
+class EasyControlsSensor(SensorEntity, Generic[T]):
     """
     Represents a sensor which provides
     a ModBus variable value.
     """
 
     def __init__(
-        self,
-        controller: Controller,
-        variable: ModbusVariable,
+        self: Self,
+        coordinator: EasyControlsDataUpdateCoordinator,
+        variable: ModbusVariable[T],
         description: SensorEntityDescription,
     ):
         """
-        Initialize a new instance of `EasyControlSensor` class.
+        Initialize a new instance of `EasyControlsSensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller.
-            variable: The Modbus variable.
-            description: The sensor description.
+            coordinator:
+                The coordinator instance.
+            variable:
+                The Modbus variable.
+            description:
+                The sensor description.
         """
         self.entity_description = description
-        self._controller = controller
+        self._coordinator = coordinator
         self._variable = variable
-        self._attr_unique_id = self._controller.mac + self.name
-
-    async def async_update(self):
-        """
-        Updates the sensor value.
-        """
-        self._attr_native_value = await self._controller.get_variable(self._variable)
-        self._attr_available = self._attr_native_value is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
-
-
-class EasyControlsVersionSensor(SensorEntity):
-    """
-    Provides the software version of Helios device as a sensor.
-    """
-
-    def __init__(self, controller: Controller, name: str):
-        """
-        Initialize a new instance of `EasyControlVersionSensor` class.
-
-        Args:
-            controller: The thread safe Helios Easy Controls controller
-            name: The name of the sensor.
-        """
-        self.entity_description = SensorEntityDescription(
-            key="version",
-            name=name,
-            icon="mdi:new-box",
-            entity_category=EntityCategory.DIAGNOSTIC,
+        self._attr_unique_id = self._coordinator.mac + self.name
+        self._attr_device_info = DeviceInfo(
+            connections={
+                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
+            }
         )
 
-        self._controller = controller
-        self._attr_unique_id = self._controller.mac + self.name
+        # pylint: disable=unused-argument
+        def update_listener(variable: ModbusVariable, value: T):
+            self._value_updated(value)
+
+        self._update_listener = update_listener
+
+    async def async_added_to_hass(self: Self) -> None:
+        self._coordinator.add_listener(self._variable, self._update_listener)
+        return await super().async_added_to_hass()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._coordinator.remove_listener(self._variable, self._update_listener)
+        return await super().async_will_remove_from_hass()
 
     @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Gets the device information.
-        """
-        return get_device_info(self._controller)
+    def should_poll(self: Self) -> bool:
+        return False
 
-    async def async_update(self):
-        """
-        Updates the sensor value.
-        """
-        self._attr_native_value = self._controller.version
+    def _value_updated(self: Self, value: T):
+        self._attr_native_value = value
         self._attr_available = self._attr_native_value is not None
+        self.schedule_update_ha_state(False)
 
 
 async def async_setup_entry(
@@ -330,19 +381,26 @@ async def async_setup_entry(
     """
     _LOGGER.info("Setting up Helios EasyControls sensors.")
 
-    controller = get_controller(hass, config_entry.data[CONF_MAC])
+    coordinator = get_coordinator(hass, config_entry.data[CONF_MAC])
 
     async_add_entities(
         [
-            EasyControlsVersionSensor(
-                controller, f"{controller.device_name} software version"
+            EasyControlsSensor(
+                coordinator,
+                VARIABLE_SOFTWARE_VERSION,
+                SensorEntityDescription(
+                    key="version",
+                    name=f"{coordinator.device_name} software version",
+                    icon="mdi:new-box",
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_PERCENTAGE_FAN_SPEED,
                 SensorEntityDescription(
                     key="fan_speed",
-                    name=f"{controller.device_name} fan speed percentage",
+                    name=f"{coordinator.device_name} fan speed percentage",
                     icon="mdi:air-conditioner",
                     native_unit_of_measurement="%",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -350,11 +408,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_FAN_STAGE,
                 SensorEntityDescription(
                     key="fan_stage",
-                    name=f"{controller.device_name} fan stage",
+                    name=f"{coordinator.device_name} fan stage",
                     icon="mdi:air-conditioner",
                     native_unit_of_measurement=" ",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -362,11 +420,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_EXTRACT_AIR_FAN_STAGE,
                 SensorEntityDescription(
                     key="extract_air_fan_stage",
-                    name=f"{controller.device_name} extract air fan stage",
+                    name=f"{coordinator.device_name} extract air fan stage",
                     icon="mdi:air-conditioner",
                     native_unit_of_measurement=" ",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -374,11 +432,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_SUPPLY_AIR_FAN_STAGE,
                 SensorEntityDescription(
                     key="supply_air_fan_stage",
-                    name=f"{controller.device_name} supply air fan stage",
+                    name=f"{coordinator.device_name} supply air fan stage",
                     icon="mdi:air-conditioner",
                     native_unit_of_measurement=" ",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -386,11 +444,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_TEMPERATURE_OUTSIDE_AIR,
                 SensorEntityDescription(
                     key="outside_air_temperature",
-                    name=f"{controller.device_name} outside air temperature",
+                    name=f"{coordinator.device_name} outside air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
                     device_class=SensorDeviceClass.TEMPERATURE,
@@ -399,11 +457,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_TEMPERATURE_SUPPLY_AIR,
                 SensorEntityDescription(
                     key="supply_air_temperature",
-                    name=f"{controller.device_name} supply air temperature",
+                    name=f"{coordinator.device_name} supply air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
                     device_class=SensorDeviceClass.TEMPERATURE,
@@ -412,11 +470,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_TEMPERATURE_EXTRACT_AIR,
                 SensorEntityDescription(
                     key="extract_air_temperature",
-                    name=f"{controller.device_name} extract air temperature",
+                    name=f"{coordinator.device_name} extract air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
                     device_class=SensorDeviceClass.TEMPERATURE,
@@ -425,11 +483,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_TEMPERATURE_OUTGOING_AIR,
                 SensorEntityDescription(
                     key="outgoing_air_temperature",
-                    name=f"{controller.device_name} outgoing air temperature",
+                    name=f"{coordinator.device_name} outgoing air temperature",
                     icon="mdi:thermometer",
                     native_unit_of_measurement="°C",
                     device_class=SensorDeviceClass.TEMPERATURE,
@@ -438,11 +496,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_EXTRACT_AIR_RPM,
                 SensorEntityDescription(
                     key="extract_air_rpm",
-                    name=f"{controller.device_name} extract air rpm",
+                    name=f"{coordinator.device_name} extract air rpm",
                     icon="mdi:rotate-3d-variant",
                     native_unit_of_measurement="rpm",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -450,11 +508,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_SUPPLY_AIR_RPM,
                 SensorEntityDescription(
                     key="supply_air_rpm",
-                    name=f"{controller.device_name} supply air rpm",
+                    name=f"{coordinator.device_name} supply air rpm",
                     icon="mdi:rotate-3d-variant",
                     native_unit_of_measurement="rpm",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -462,11 +520,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_HUMIDITY_EXTRACT_AIR,
                 SensorEntityDescription(
                     key="extract_air_relative_humidity",
-                    name=f"{controller.device_name} extract air relative humidity",
+                    name=f"{coordinator.device_name} extract air relative humidity",
                     icon="mdi:water-percent",
                     native_unit_of_measurement="%",
                     device_class=SensorDeviceClass.HUMIDITY,
@@ -475,22 +533,22 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_PARTY_MODE_REMAINING_TIME,
                 SensorEntityDescription(
                     key="party_mode_remaining_time",
-                    name=f"{controller.device_name} party mode remaining time",
+                    name=f"{coordinator.device_name} party mode remaining time",
                     icon="mdi:clock",
                     native_unit_of_measurement="min",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_OPERATION_HOURS_SUPPLY_AIR_FAN,
                 SensorEntityDescription(
                     key="supply_air_fan_operation_hours",
-                    name=f"{controller.device_name} supply air fan operation hours",
+                    name=f"{coordinator.device_name} supply air fan operation hours",
                     icon="mdi:history",
                     native_unit_of_measurement="h",
                     state_class=SensorStateClass.TOTAL_INCREASING,
@@ -498,11 +556,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_OPERATION_HOURS_EXTRACT_AIR_FAN,
                 SensorEntityDescription(
                     key="extract_air_fan_operation_hours",
-                    name=f"{controller.device_name} extract air fan operation hours",
+                    name=f"{coordinator.device_name} extract air fan operation hours",
                     icon="mdi:history",
                     native_unit_of_measurement="h",
                     state_class=SensorStateClass.TOTAL_INCREASING,
@@ -510,11 +568,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_OPERATION_HOURS_PREHEATER,
                 SensorEntityDescription(
                     key="preheater_operation_hours",
-                    name=f"{controller.device_name} preheater operation hours",
+                    name=f"{coordinator.device_name} preheater operation hours",
                     icon="mdi:history",
                     native_unit_of_measurement="h",
                     state_class=SensorStateClass.TOTAL_INCREASING,
@@ -522,11 +580,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_PERCENTAGE_PREHEATER,
                 SensorEntityDescription(
                     key="preheater_percentage",
-                    name=f"{controller.device_name} preheater percentage",
+                    name=f"{coordinator.device_name} preheater percentage",
                     icon="mdi:thermometer-lines",
                     native_unit_of_measurement="%",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -534,11 +592,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_OPERATION_HOURS_AFTERHEATER,
                 SensorEntityDescription(
                     key="after_heater_operation_hours",
-                    name=f"{controller.device_name} afterheater operation hours",
+                    name=f"{coordinator.device_name} afterheater operation hours",
                     icon="mdi:history",
                     native_unit_of_measurement="h",
                     state_class=SensorStateClass.TOTAL_INCREASING,
@@ -546,11 +604,11 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlsSensor(
-                controller,
+                coordinator,
                 VARIABLE_PERCENTAGE_AFTERHEATER,
                 SensorEntityDescription(
                     key="afterheater_percentage",
-                    name=f"{controller.device_name} afterheater percentage",
+                    name=f"{coordinator.device_name} afterheater percentage",
                     icon="mdi:thermometer-lines",
                     native_unit_of_measurement="%",
                     state_class=SensorStateClass.MEASUREMENT,
@@ -558,40 +616,40 @@ async def async_setup_entry(
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_ERRORS,
                 ERRORS,
                 SensorEntityDescription(
                     key="ERRORS",
-                    name=f"{controller.device_name} errors",
+                    name=f"{coordinator.device_name} errors",
                     icon="mdi:alert-circle",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_WARNINGS,
                 WARNINGS,
                 SensorEntityDescription(
                     key="WARNINGS",
-                    name=f"{controller.device_name} warnings",
+                    name=f"{coordinator.device_name} warnings",
                     icon="mdi:alert-circle-outline",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
             EasyControlFlagSensor(
-                controller,
+                coordinator,
                 VARIABLE_INFOS,
                 INFOS,
                 SensorEntityDescription(
                     key="INFORMATION",
-                    name=f"{controller.device_name} information",
+                    name=f"{coordinator.device_name} information",
                     icon="mdi:information-outline",
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ),
-            EasyControlsAirFlowRateSensor(controller),
-            EasyControlsEfficiencySensor(controller),
+            EasyControlsAirFlowRateSensor(coordinator),
+            EasyControlsEfficiencySensor(coordinator),
         ]
     )
 
