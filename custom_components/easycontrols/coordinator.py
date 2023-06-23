@@ -58,6 +58,10 @@ from custom_components.easycontrols.const import (
     VARIABLE_TEMPERATURE_OUTSIDE_AIR,
     VARIABLE_TEMPERATURE_SUPPLY_AIR,
     VARIABLE_WARNINGS,
+    VARIABLE_HUMIDITY_FTF1,
+    VARIABLE_HUMIDITY_FTF2,
+    VARIABLE_TEMPERATURE_FTF1,
+    VARIABLE_TEMPERATURE_FTF2,
 )
 from custom_components.easycontrols.modbus_variable import (
     BoolModbusVariable,
@@ -201,6 +205,10 @@ class EasyControlsDataUpdateCoordinator:
                 VARIABLE_BYPASS_FROM_MONTH,
                 VARIABLE_BYPASS_TO_DAY,
                 VARIABLE_BYPASS_TO_MONTH,
+                VARIABLE_HUMIDITY_FTF1,
+                VARIABLE_HUMIDITY_FTF2,
+                VARIABLE_TEMPERATURE_FTF1,
+                VARIABLE_TEMPERATURE_FTF2,
             ]
         ]:
             # We put the queue item with priority 1 (high) to the queue.
