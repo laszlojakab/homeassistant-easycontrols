@@ -1,12 +1,12 @@
 {
   "domain": "easycontrols",
   "name": "Helios Easy Controls",
-  "codeowners": ["@laszlojakab"],
+  "codeowners": ["@laszlojakab", "@TheBigNeo"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/laszlojakab/homeassistant-easycontrols#usage",
+  "documentation": "https://github.com/TheBigNeo/homeassistant_helios_easycontrols#usage",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/laszlojakab/homeassistant-easycontrols/issues",
+  "issue_tracker": "https://github.com/TheBigNeo/homeassistant_helios_easycontrols/issues",
   "requirements": ["eazyctrl==0.4"],
-  "version": "0.6.0"
+  "version": "2023.1"
 }
