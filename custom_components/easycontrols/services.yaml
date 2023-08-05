@@ -1,4 +1,5 @@
 party_mode:
+  name: Party Mode
   description: Change fan speed for limited time. Deprecated, use start_party_mode and stop_party_mode instead.
   fields:
     entity_id:
@@ -49,6 +50,7 @@ start_party_mode:
           min: 5
           max: 180
 stop_party_mode:
+  name: Stop Party Mode
   description: Stops the party mode.
   fields:
     entity_id:
