@@ -11,6 +11,7 @@ party_mode:
       description: Duration in minutes
       example: 60
 start_party_mode:
+  name: Start Party Mode
   description: Starts the party mode for a limited time.
   fields:
     entity_id:
