@@ -1,6 +1,7 @@
 """
 The binary sensor module for Helios Easy Controls integration.
 """
+
 import logging
 
 from homeassistant.components.binary_sensor import (
@@ -56,9 +57,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
         self._attr_unique_id = self._coordinator.mac + self.name
         self._attr_should_poll = False
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         def update_listener(

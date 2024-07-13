@@ -1,4 +1,5 @@
-""" The sensor module for Helios Easy Controls integration. """
+"""The sensor module for Helios Easy Controls integration."""
+
 import logging
 from typing import Any, Generic, TypeVar
 
@@ -79,9 +80,7 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         self._attr_unique_id = self._coordinator.mac + self.name
         self._percentage_fan_speed: int | None = None
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         def update_listener(variable: ModbusVariable[Any], value: Any):
@@ -90,15 +89,11 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
-        self._coordinator.add_listener(
-            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
-        )
+        self._coordinator.add_listener(VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
-        self._coordinator.remove_listener(
-            VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener
-        )
+        self._coordinator.remove_listener(VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     @property
@@ -147,9 +142,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
         self._supply_air_temperature: float | None = None
         self._extract_air_temperature: float | None = None
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         def update_listener(variable: ModbusVariable[Any], value: Any):
@@ -158,27 +151,15 @@ class EasyControlsEfficiencySensor(SensorEntity):
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
-        self._coordinator.add_listener(
-            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
-        )
-        self._coordinator.add_listener(
-            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
-        )
-        self._coordinator.add_listener(
-            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
-        )
+        self._coordinator.add_listener(VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener)
+        self._coordinator.add_listener(VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener)
+        self._coordinator.add_listener(VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
-        self._coordinator.remove_listener(
-            VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener
-        )
-        self._coordinator.remove_listener(
-            VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener
-        )
-        self._coordinator.remove_listener(
-            VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener
-        )
+        self._coordinator.remove_listener(VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener)
+        self._coordinator.remove_listener(VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener)
+        self._coordinator.remove_listener(VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     @property
@@ -204,10 +185,7 @@ class EasyControlsEfficiencySensor(SensorEntity):
                 self._attr_native_value = abs(
                     round(
                         (self._supply_air_temperature - self._outside_air_temperature)
-                        / (
-                            self._extract_air_temperature
-                            - self._outside_air_temperature
-                        )
+                        / (self._extract_air_temperature - self._outside_air_temperature)
                         * 100,
                         2,
                     )
@@ -253,9 +231,7 @@ class EasyControlFlagSensor(SensorEntity):
         self._flags = flags
         self._attr_unique_id = self._coordinator.mac + self.name
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         # pylint: disable=unused-argument
@@ -334,9 +310,7 @@ class EasyControlsSensor(SensorEntity, Generic[T]):
         self._variable = variable
         self._attr_unique_id = self._coordinator.mac + self.name
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         # pylint: disable=unused-argument

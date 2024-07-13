@@ -1,4 +1,5 @@
 """Define Helios Easy Controls constants."""
+
 from custom_components.easycontrols.modbus_variable import (
     BoolModbusVariable,
     FlagModbusVariable,

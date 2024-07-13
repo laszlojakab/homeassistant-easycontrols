@@ -1,4 +1,5 @@
 """Helios Easy Controls integration."""
+
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,6 +14,7 @@ from custom_components.easycontrols.coordinator import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
 
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
@@ -55,13 +57,9 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
 
         set_coordinator(hass, coordinator)
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "fan")
-    )
+    hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, "fan"))
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
-    )
+    hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, "sensor"))
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry, "binary_sensor")
@@ -69,9 +67,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     return True
 
 
-async def async_unload_entry(
-    hass: HomeAssistantType, config_entry: ConfigEntry
-) -> bool:
+async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
     """
     Executed when a config entry unloaded by Home Assistant.
 
@@ -122,9 +118,7 @@ def set_coordinator(
     hass.data[DOMAIN][DATA_COORDINATOR][coordinator.mac] = coordinator
 
 
-def get_coordinator(
-    hass: HomeAssistantType, mac_address: str
-) -> EasyControlsDataUpdateCoordinator:
+def get_coordinator(hass: HomeAssistantType, mac_address: str) -> EasyControlsDataUpdateCoordinator:
     """
     Gets the coordinator for the given MAC address.
 

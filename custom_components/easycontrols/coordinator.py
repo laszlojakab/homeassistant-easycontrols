@@ -1,4 +1,5 @@
-""" Module of `EasyControlsDataUpdateCoordinator` class. """
+"""Module of `EasyControlsDataUpdateCoordinator` class."""
+
 import asyncio
 import logging
 import re
@@ -149,9 +150,7 @@ class EasyControlsDataUpdateCoordinator:
         self._dispose_schedule_items: CALLBACK_TYPE | None = None
         self._disposed: bool = False
 
-        self._variable_listeners: dict[
-            str, list[Callable[[ModbusVariable, Any], None]]
-        ] = {}
+        self._variable_listeners: dict[str, list[Callable[[ModbusVariable, Any], None]]] = {}
         """
         The dictionary of variable listeners. The key is the variable name,
         the value is the functions to call when the given variable value updated
@@ -213,9 +212,7 @@ class EasyControlsDataUpdateCoordinator:
         """
         self._mac = await self.get_variable(VARIABLE_MAC_ADDRESS)
         self._serial_number = await self.get_variable(VARIABLE_SERIAL_NUMBER)
-        self._article_description = await self.get_variable(
-            VARIABLE_ARTICLE_DESCRIPTION
-        )
+        self._article_description = await self.get_variable(VARIABLE_ARTICLE_DESCRIPTION)
         self._version = await self.get_variable(VARIABLE_SOFTWARE_VERSION)
         self._maximum_air_flow = float(re.findall(r"\d+", self._article_description)[0])
 
@@ -350,9 +347,7 @@ class EasyControlsDataUpdateCoordinator:
             try:
                 # We allow maximum 5 seconds to update a single variable
                 async with async_timeout.timeout(5):
-                    listeners_of_variable = self._variable_listeners.get(
-                        queue_item.variable.name
-                    )
+                    listeners_of_variable = self._variable_listeners.get(queue_item.variable.name)
                     # If there is a listener for the variable we get the value from the device.
                     if listeners_of_variable and len(listeners_of_variable) > 0:
                         _LOGGER.debug("Updating variable %s.", queue_item.variable)
@@ -373,9 +368,7 @@ class EasyControlsDataUpdateCoordinator:
                             queue_item.variable,
                         )
             except asyncio.exceptions.TimeoutError:
-                _LOGGER.warning(
-                    "Timeout while updating variable: %s", queue_item.variable
-                )
+                _LOGGER.warning("Timeout while updating variable: %s", queue_item.variable)
 
             # If the queue item refresh interval is not zero
             # we have to update again so we collect it into
@@ -423,28 +416,22 @@ class EasyControlsDataUpdateCoordinator:
         )
 
     @overload
-    async def get_variable(self, variable: BoolModbusVariable) -> bool:
-        ...
+    async def get_variable(self, variable: BoolModbusVariable) -> bool: ...
 
     @overload
-    async def get_variable(self, variable: FlagModbusVariable) -> int:
-        ...
+    async def get_variable(self, variable: FlagModbusVariable) -> int: ...
 
     @overload
-    async def get_variable(self, variable: FloatModbusVariable) -> float:
-        ...
+    async def get_variable(self, variable: FloatModbusVariable) -> float: ...
 
     @overload
-    async def get_variable(self, variable: IntModbusVariable) -> int:
-        ...
+    async def get_variable(self, variable: IntModbusVariable) -> int: ...
 
     @overload
-    async def get_variable(self, variable: OperationHoursModbusVariable) -> int:
-        ...
+    async def get_variable(self, variable: OperationHoursModbusVariable) -> int: ...
 
     @overload
-    async def get_variable(self, variable: StrModbusVariable) -> str:
-        ...
+    async def get_variable(self, variable: StrModbusVariable) -> str: ...
 
     async def get_variable(self, variable: ModbusVariable) -> Any:
         """
@@ -466,30 +453,22 @@ class EasyControlsDataUpdateCoordinator:
             return value
 
     @overload
-    async def set_variable(self, variable: BoolModbusVariable, value: bool) -> bool:
-        ...
+    async def set_variable(self, variable: BoolModbusVariable, value: bool) -> bool: ...
 
     @overload
-    async def set_variable(self, variable: FlagModbusVariable, value: int) -> bool:
-        ...
+    async def set_variable(self, variable: FlagModbusVariable, value: int) -> bool: ...
 
     @overload
-    async def set_variable(self, variable: FloatModbusVariable, value: float) -> bool:
-        ...
+    async def set_variable(self, variable: FloatModbusVariable, value: float) -> bool: ...
 
     @overload
-    async def set_variable(self, variable: IntModbusVariable, value: int) -> bool:
-        ...
+    async def set_variable(self, variable: IntModbusVariable, value: int) -> bool: ...
 
     @overload
-    async def set_variable(
-        self, variable: OperationHoursModbusVariable, value: int
-    ) -> bool:
-        ...
+    async def set_variable(self, variable: OperationHoursModbusVariable, value: int) -> bool: ...
 
     @overload
-    async def set_variable(self, variable: StrModbusVariable, value: str) -> bool:
-        ...
+    async def set_variable(self, variable: StrModbusVariable, value: str) -> bool: ...
 
     async def set_variable(self, variable: ModbusVariable, value: Any) -> bool:
         """
@@ -504,9 +483,7 @@ class EasyControlsDataUpdateCoordinator:
         """
         async with self._lock:
             _LOGGER.debug("Setting %s to %s.", variable.name, value)
-            return await self._eazyctrl.set_variable(
-                variable.name, value, variable.set_converter
-            )
+            return await self._eazyctrl.set_variable(variable.name, value, variable.set_converter)
 
 
 async def create_coordinator(hass: HomeAssistantType, device_name: str, host: str):

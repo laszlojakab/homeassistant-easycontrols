@@ -1,6 +1,7 @@
 """
 The module contains Modbus variables.
 """
+
 from dataclasses import dataclass
 from typing import Callable, Final, Generic, TypeVar
 
@@ -103,9 +104,7 @@ class OperationHoursModbusVariable(ModbusVariable[float]):
             name: The Modbus variable name.
             size: The variable value length.
         """
-        super().__init__(
-            name, size, lambda x: round(int(x) / 60.0, 2), lambda x: str(x * 60)
-        )
+        super().__init__(name, size, lambda x: round(int(x) / 60.0, 2), lambda x: str(x * 60))
 
 
 # pylint: disable=too-few-public-methods

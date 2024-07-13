@@ -1,6 +1,7 @@
 """
 Fan entity support for Helios Easy Controls device.
 """
+
 import logging
 from datetime import datetime, timedelta
 from typing import Any
@@ -76,9 +77,7 @@ class EasyControlsFanDevice(FanEntity):
         """
         Initialize a new instance of `EasyControlsFanDevice` class.
         """
-        self.entity_description = FanEntityDescription(
-            key="fan", name=coordinator.device_name
-        )
+        self.entity_description = FanEntityDescription(key="fan", name=coordinator.device_name)
         self._coordinator = coordinator
         self._speed = None
         self._supply_air_rpm = None
@@ -94,9 +93,7 @@ class EasyControlsFanDevice(FanEntity):
         self._attr_preset_modes = [PRESET_AUTO, PRESET_PARTY, PRESET_STANDBY]
         self._attr_should_poll = False
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            },
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)},
             identifiers={(DOMAIN, self._coordinator.serial_number)},
             name=self._coordinator.device_name,
             manufacturer="Helios",
@@ -115,12 +112,8 @@ class EasyControlsFanDevice(FanEntity):
         self._coordinator.add_listener(VARIABLE_OPERATING_MODE, self._update_listener)
         self._coordinator.add_listener(VARIABLE_PARTY_MODE, self._update_listener)
         self._coordinator.add_listener(VARIABLE_STANDBY_MODE, self._update_listener)
-        self._coordinator.add_listener(
-            VARIABLE_STANDBY_MODE_FAN_STAGE, self._update_listener
-        )
-        self._coordinator.add_listener(
-            VARIABLE_PARTY_MODE_FAN_STAGE, self._update_listener
-        )
+        self._coordinator.add_listener(VARIABLE_STANDBY_MODE_FAN_STAGE, self._update_listener)
+        self._coordinator.add_listener(VARIABLE_PARTY_MODE_FAN_STAGE, self._update_listener)
 
         self._schedule_variable_updates()
 
@@ -128,17 +121,11 @@ class EasyControlsFanDevice(FanEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         self._coordinator.remove_listener(VARIABLE_FAN_STAGE, self._update_listener)
-        self._coordinator.remove_listener(
-            VARIABLE_OPERATING_MODE, self._update_listener
-        )
+        self._coordinator.remove_listener(VARIABLE_OPERATING_MODE, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_PARTY_MODE, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_STANDBY_MODE, self._update_listener)
-        self._coordinator.remove_listener(
-            VARIABLE_STANDBY_MODE_FAN_STAGE, self._update_listener
-        )
-        self._coordinator.remove_listener(
-            VARIABLE_PARTY_MODE_FAN_STAGE, self._update_listener
-        )
+        self._coordinator.remove_listener(VARIABLE_STANDBY_MODE_FAN_STAGE, self._update_listener)
+        self._coordinator.remove_listener(VARIABLE_PARTY_MODE_FAN_STAGE, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     # pylint: disable=too-many-branches
@@ -219,18 +206,12 @@ class EasyControlsFanDevice(FanEntity):
         if percentage == 0:
             await self.async_turn_off()
         else:
-            speed = percentage_to_ordered_list_item(
-                ORDERED_NAMED_FAN_SPEEDS, percentage
-            )
+            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
 
             await self._disable_running_preset()
 
-            await self._coordinator.set_variable(
-                VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL
-            )
-            await self._coordinator.set_variable(
-                VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed)
-            )
+            await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            await self._coordinator.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
 
             self._schedule_variable_updates()
 
@@ -244,17 +225,13 @@ class EasyControlsFanDevice(FanEntity):
         self._disable_running_preset()
 
         if preset_mode == PRESET_AUTO:
-            await self._coordinator.set_variable(
-                VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO
-            )
+            await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_AUTO)
         elif preset_mode == PRESET_PARTY:
             await self._coordinator.set_variable(VARIABLE_PARTY_MODE, True)
         elif preset_mode == PRESET_STANDBY:
             await self._coordinator.set_variable(VARIABLE_STANDBY_MODE, True)
         else:
-            await self._coordinator.set_variable(
-                VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL
-            )
+            await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
 
         self._schedule_variable_updates()
 
@@ -273,16 +250,10 @@ class EasyControlsFanDevice(FanEntity):
         if percentage is not None:
             await self._disable_running_preset()
 
-            await self._coordinator.set_variable(
-                VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL
-            )
-            speed = percentage_to_ordered_list_item(
-                ORDERED_NAMED_FAN_SPEEDS, percentage
-            )
+            await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
+            speed = percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage)
 
-            await self._coordinator.set_variable(
-                VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed)
-            )
+            await self._coordinator.set_variable(VARIABLE_FAN_STAGE, self.speed_to_fan_stage(speed))
         else:
             await self.async_set_preset_mode(preset_mode)
 
@@ -294,9 +265,7 @@ class EasyControlsFanDevice(FanEntity):
         """
         await self._coordinator.set_variable(VARIABLE_PARTY_MODE, False)
         await self._coordinator.set_variable(VARIABLE_STANDBY_MODE, False)
-        await self._coordinator.set_variable(
-            VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL
-        )
+        await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
         await self._coordinator.set_variable(VARIABLE_FAN_STAGE, 0)
         self._schedule_variable_updates()
 
@@ -432,11 +401,7 @@ async def async_setup_entry(
     async def handle_stop_party_mode(call: ServiceCall):
         await fan.stop_party_mode()
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_START_PARTY_MODE, handle_start_party_mode
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_STOP_PARTY_MODE, handle_stop_party_mode
-    )
+    hass.services.async_register(DOMAIN, SERVICE_START_PARTY_MODE, handle_start_party_mode)
+    hass.services.async_register(DOMAIN, SERVICE_STOP_PARTY_MODE, handle_stop_party_mode)
 
     _LOGGER.info("Setting up Helios EasyControls fan device completed.")

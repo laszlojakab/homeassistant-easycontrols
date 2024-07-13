@@ -1,4 +1,5 @@
-""" The configuration flow for Helios Easy Controls integration. """
+"""The configuration flow for Helios Easy Controls integration."""
+
 import logging
 from typing import Any, Union
 
@@ -25,15 +26,11 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: Union[dict[str, Any], None] = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: Union[dict[str, Any], None] = None) -> FlowResult:
         """
         Handles the step when integration added from the UI.
         """
-        data_schema = vol.Schema(
-            {vol.Required(CONF_HOST): str, vol.Required(CONF_NAME): str}
-        )
+        data_schema = vol.Schema({vol.Required(CONF_HOST): str, vol.Required(CONF_NAME): str})
 
         if user_input is not None:
             await self.async_set_unique_id(user_input[CONF_NAME])
