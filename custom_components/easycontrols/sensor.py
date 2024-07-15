@@ -1,7 +1,7 @@
 """The sensor module for Helios Easy Controls integration."""
 
 import logging
-from typing import Generic, Self, TypeVar
+from typing import Self
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -308,10 +308,7 @@ class EasyControlFlagSensor(SensorEntity):
         return string
 
 
-T = TypeVar("T")
-
-
-class EasyControlsSensor(SensorEntity, Generic[T]):
+class EasyControlsSensor[T](SensorEntity):
     """
     Represents a sensor which provides
     a ModBus variable value.

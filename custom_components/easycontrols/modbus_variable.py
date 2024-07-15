@@ -2,13 +2,11 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, Generic, Self, TypeVar
-
-TModBusVariableValue = TypeVar("TModBusVariableValue")
+from typing import Final, Self
 
 
 @dataclass
-class ModbusVariable(Generic[TModBusVariableValue]):
+class ModbusVariable[TModBusVariableValue]:
     """Represents a Modbus variable."""
 
     name: Final[str]

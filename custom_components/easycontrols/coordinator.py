@@ -67,7 +67,6 @@ from custom_components.easycontrols.modbus_variable import (
     ModbusVariable,
     OperationHoursModbusVariable,
     StrModbusVariable,
-    TModBusVariableValue,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -258,7 +257,7 @@ class EasyControlsDataUpdateCoordinator:
         # We put the item to queue with priority 1 (high) to update as soon as possible.
         self._variable_queue.put((1, QueueItem(variable, timedelta())))
 
-    def add_listener(
+    def add_listener[TModBusVariableValue](
         self: Self,
         variable: ModbusVariable[TModBusVariableValue],
         listener: Callable[[ModbusVariable, TModBusVariableValue], None],
@@ -279,7 +278,7 @@ class EasyControlsDataUpdateCoordinator:
 
         listeners_of_variable.append(listener)
 
-    def remove_listener(
+    def remove_listener[TModBusVariableValue](
         self: Self,
         variable: ModbusVariable[TModBusVariableValue],
         listener: Callable[[ModbusVariable, TModBusVariableValue], None],
