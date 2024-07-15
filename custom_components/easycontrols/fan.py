@@ -1,10 +1,8 @@
-"""
-Fan entity support for Helios Easy Controls device.
-"""
+"""Fan entity support for Helios Easy Controls device."""
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Self
 
 from homeassistant.components.fan import (
     SUPPORT_PRESET_MODE,
@@ -24,7 +22,6 @@ from homeassistant.util.percentage import (
     ordered_list_item_to_percentage,
     percentage_to_ordered_list_item,
 )
-from typing_extensions import Self
 
 from custom_components.easycontrols import get_coordinator
 from custom_components.easycontrols.const import (
@@ -69,19 +66,14 @@ ORDERED_NAMED_FAN_SPEEDS = [
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-instance-attributes
 class EasyControlsFanDevice(FanEntity):
     """Represents a fan entity which controls the Helios device."""
 
-    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
-        """
-        Initialize a new instance of `EasyControlsFanDevice` class.
-        """
+    def __init__(self: Self, coordinator: EasyControlsDataUpdateCoordinator):
+        """Initialize a new instance of `EasyControlsFanDevice` class."""
         self.entity_description = FanEntityDescription(key="fan", name=coordinator.device_name)
         self._coordinator = coordinator
-        self._speed = None
-        self._supply_air_rpm = None
-        self._extract_air_rpm = None
+        self._speed: str | None = None
         self._fan_stage: int | None = None
         self._operating_mode: int | None = None
         self._party_mode: bool | None = None
@@ -102,12 +94,17 @@ class EasyControlsFanDevice(FanEntity):
             configuration_url=f"http://{self._coordinator.host}",
         )
 
-        def update_listener(variable: ModbusVariable[Any], value: Any):
+        def update_listener[T](variable: ModbusVariable[T], value: T) -> None:
             self._value_updated(variable, value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when the entity is added to Home Assistant.
+
+        It adds the update listener to the coordinator.
+        """
         self._coordinator.add_listener(VARIABLE_FAN_STAGE, self._update_listener)
         self._coordinator.add_listener(VARIABLE_OPERATING_MODE, self._update_listener)
         self._coordinator.add_listener(VARIABLE_PARTY_MODE, self._update_listener)
@@ -120,6 +117,11 @@ class EasyControlsFanDevice(FanEntity):
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when the entity will be removed from Home Assistant.
+
+        It removes the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(VARIABLE_FAN_STAGE, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_OPERATING_MODE, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_PARTY_MODE, self._update_listener)
@@ -128,13 +130,8 @@ class EasyControlsFanDevice(FanEntity):
         self._coordinator.remove_listener(VARIABLE_PARTY_MODE_FAN_STAGE, self._update_listener)
         return await super().async_will_remove_from_hass()
 
-    # pylint: disable=too-many-branches
-    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
-        if variable == VARIABLE_SUPPLY_AIR_RPM:
-            self._supply_air_rpm = value
-        elif variable == VARIABLE_EXTRACT_AIR_RPM:
-            self._extract_air_rpm = value
-        elif variable == VARIABLE_FAN_STAGE:
+    def _value_updated[T](self: Self, variable: ModbusVariable[T], value: T) -> None:  # noqa: C901
+        if variable == VARIABLE_FAN_STAGE:
             self._fan_stage = value
         elif variable == VARIABLE_OPERATING_MODE:
             self._operating_mode = value
@@ -176,32 +173,27 @@ class EasyControlsFanDevice(FanEntity):
         self.schedule_update_ha_state(False)
 
     @property
-    def unique_id(self):
-        """
-        Gets the unique ID of the fan.
-        """
+    def unique_id(self) -> str:
+        """Gets the unique ID of the fan."""
         return self._coordinator.mac
 
     @property
     def supported_features(self) -> int:
-        """
-        Gets the supported features flag.
-        """
+        """Gets the supported features flag."""
         return SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
 
     @property
     def speed_count(self) -> int:
-        """
-        Gets the number of speeds the fan supports.
-        """
+        """Gets the number of speeds the fan supports."""
         return len(ORDERED_NAMED_FAN_SPEEDS)
 
-    async def async_set_percentage(self, percentage: int) -> None:
+    async def async_set_percentage(self: Self, percentage: int) -> None:
         """
         Sets the speed percentage of the fan.
 
         Args:
             percentage: The speed percentage.
+
         """
         if percentage == 0:
             await self.async_turn_off()
@@ -215,12 +207,13 @@ class EasyControlsFanDevice(FanEntity):
 
             self._schedule_variable_updates()
 
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
+    async def async_set_preset_mode(self: Self, preset_mode: str) -> None:
         """
         Sets the preset mode of the fan.
 
         Args:
             preset_mode: The preset mode to set.
+
         """
         self._disable_running_preset()
 
@@ -236,14 +229,12 @@ class EasyControlsFanDevice(FanEntity):
         self._schedule_variable_updates()
 
     async def async_turn_on(
-        self,
+        self: Self,
         percentage: int | None = None,
         preset_mode: str | None = None,
-        **kwargs,
-    ):
-        """
-        Turns on the fan at the specific speed or sets the specified preset mode.
-        """
+        **kwargs,  # noqa: ARG002
+    ) -> None:
+        """Turns on the fan at the specific speed or sets the specified preset mode."""
         if percentage is None and preset_mode is None:
             percentage = 50
 
@@ -259,17 +250,15 @@ class EasyControlsFanDevice(FanEntity):
 
         self._schedule_variable_updates()
 
-    async def async_turn_off(self, **kwargs: Any):
-        """
-        Turns off the fan.
-        """
+    async def async_turn_off(self: Self, **kwargs: Any) -> None:  # noqa: ARG002, ANN401
+        """Turns off the fan."""
         await self._coordinator.set_variable(VARIABLE_PARTY_MODE, False)
         await self._coordinator.set_variable(VARIABLE_STANDBY_MODE, False)
         await self._coordinator.set_variable(VARIABLE_OPERATING_MODE, OPERATING_MODE_MANUAL)
         await self._coordinator.set_variable(VARIABLE_FAN_STAGE, 0)
         self._schedule_variable_updates()
 
-    async def start_party_mode(self, speed: str, duration: int) -> None:
+    async def start_party_mode(self: Self, speed: str, duration: int) -> None:
         """
         Starts the party mode.
 
@@ -280,6 +269,7 @@ class EasyControlsFanDevice(FanEntity):
             duration: int
                 The duration of the party mode.
                 Set to None to keep the previously set value.
+
         """
         if speed is not None:
             await self._coordinator.set_variable(
@@ -291,10 +281,8 @@ class EasyControlsFanDevice(FanEntity):
         await self._coordinator.set_variable(VARIABLE_PARTY_MODE, True)
         self._schedule_variable_updates()
 
-    async def stop_party_mode(self):
-        """
-        Stops the party mode.
-        """
+    async def stop_party_mode(self) -> None:
+        """Stops the party mode."""
         await self._coordinator.set_variable(VARIABLE_PARTY_MODE, False)
         self._schedule_variable_updates()
 
@@ -308,6 +296,7 @@ class EasyControlsFanDevice(FanEntity):
 
         Returns:
             The converted fan stage.
+
         """
         return ORDERED_NAMED_FAN_SPEEDS.index(speed) + 1
 
@@ -321,10 +310,11 @@ class EasyControlsFanDevice(FanEntity):
 
         Returns:
             The speed percentage represented by the fan_stage.
+
         """
         return ORDERED_NAMED_FAN_SPEEDS[fan_stage - 1]
 
-    def _schedule_variable_updates(self):
+    def _schedule_variable_updates(self: Self) -> None:
         self._coordinator.schedule_update(VARIABLE_PERCENTAGE_FAN_SPEED)
         self._coordinator.schedule_update(VARIABLE_EXTRACT_AIR_FAN_STAGE)
         self._coordinator.schedule_update(VARIABLE_SUPPLY_AIR_FAN_STAGE)
@@ -333,22 +323,21 @@ class EasyControlsFanDevice(FanEntity):
         self._coordinator.schedule_update(VARIABLE_OPERATING_MODE)
         self._coordinator.schedule_update(VARIABLE_FAN_STAGE)
 
-        # pylint: disable=unused-argument
         @callback
-        def schedule_rpm_updates(execution_time: datetime):
+        def schedule_rpm_updates(execution_time: datetime) -> None:  # noqa: ARG001
             self._coordinator.schedule_update(VARIABLE_SUPPLY_AIR_RPM)
             self._coordinator.schedule_update(VARIABLE_EXTRACT_AIR_RPM)
 
         # blades need time to stop so we update a little later
         async_call_later(self.hass, timedelta(seconds=5), schedule_rpm_updates)
 
-    async def _disable_running_preset(self):
+    async def _disable_running_preset(self) -> None:
         await self._coordinator.set_variable(VARIABLE_PARTY_MODE, False)
         await self._coordinator.set_variable(VARIABLE_STANDBY_MODE, False)
 
         self._schedule_preset_variable_updates()
 
-    def _schedule_preset_variable_updates(self):
+    def _schedule_preset_variable_updates(self: Self) -> None:
         self._coordinator.schedule_update(VARIABLE_PARTY_MODE_REMAINING_TIME)
         self._coordinator.schedule_update(VARIABLE_STANDBY_MODE_REMAINING_TIME)
         self._coordinator.schedule_update(VARIABLE_PARTY_MODE_REMAINING_TIME)
@@ -359,7 +348,7 @@ async def async_setup_entry(
     hass: HomeAssistantType,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-):
+) -> None:
     """
     Setup of Helios Easy Controls fan for the specified config_entry.
 
@@ -370,6 +359,7 @@ async def async_setup_entry(
 
     Returns:
         The value indicates whether the setup succeeded.
+
     """
     _LOGGER.info("Setting up Helios EasyControls fan device.")
 
@@ -378,7 +368,7 @@ async def async_setup_entry(
 
     async_add_entities([fan])
 
-    async def handle_party_mode(call: ServiceCall):
+    async def handle_party_mode(call: ServiceCall) -> None:
         _LOGGER.warning(
             "party_mode service is deprecated. "
             "Use start_party_mode and stop_party_mode service instead!"
@@ -392,13 +382,12 @@ async def async_setup_entry(
 
     hass.services.async_register(DOMAIN, "party_mode", handle_party_mode)
 
-    async def handle_start_party_mode(call: ServiceCall):
+    async def handle_start_party_mode(call: ServiceCall) -> None:
         duration = call.data.get("duration", None)
         speed = call.data.get("speed", None)
         await fan.start_party_mode(speed, duration)
 
-    # pylint: disable=unused-argument
-    async def handle_stop_party_mode(call: ServiceCall):
+    async def handle_stop_party_mode(call: ServiceCall) -> None:  # noqa: ARG001
         await fan.stop_party_mode()
 
     hass.services.async_register(DOMAIN, SERVICE_START_PARTY_MODE, handle_start_party_mode)

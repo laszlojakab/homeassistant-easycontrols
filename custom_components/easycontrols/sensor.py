@@ -1,7 +1,7 @@
 """The sensor module for Helios Easy Controls integration."""
 
 import logging
-from typing import Any, Generic, TypeVar
+from typing import Generic, Self, TypeVar
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -15,7 +15,6 @@ from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
-from typing_extensions import Self
 
 from custom_components.easycontrols import get_coordinator
 from custom_components.easycontrols.const import (
@@ -46,27 +45,22 @@ from custom_components.easycontrols.const import (
     WARNINGS,
 )
 from custom_components.easycontrols.coordinator import EasyControlsDataUpdateCoordinator
-from custom_components.easycontrols.modbus_variable import (
-    IntModbusVariable,
-    ModbusVariable,
-)
+from custom_components.easycontrols.modbus_variable import IntModbusVariable, ModbusVariable
 
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-instance-attributes
 class EasyControlsAirFlowRateSensor(SensorEntity):
-    """
-    Represents a sensor which provides current airflow rate.
-    """
+    """Represents a sensor which provides current airflow rate."""
 
-    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
+    def __init__(self: Self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsAirFlowRateSensor` class.
 
         Args:
             coordinator:
                 The coordinator instance.
+
         """
         self.entity_description = SensorEntityDescription(
             key="air_flow_rate",
@@ -83,24 +77,35 @@ class EasyControlsAirFlowRateSensor(SensorEntity):
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
-        def update_listener(variable: ModbusVariable[Any], value: Any):
+        def update_listener[T](variable: ModbusVariable[T], value: T) -> None:
             self._value_updated(variable, value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when the entity is added to Home Assistant.
+
+        It registers the update listener to the coordinator.
+        """
         self._coordinator.add_listener(VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when the entity will be removed from Home Assistant.
+
+        It removes the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(VARIABLE_PERCENTAGE_FAN_SPEED, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     @property
     def should_poll(self: Self) -> bool:
+        """Gets the value indicates whether the sensor should be polled."""
         return False
 
-    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+    def _value_updated[T](self: Self, variable: ModbusVariable[T], value: T) -> None:
         if variable == VARIABLE_PERCENTAGE_FAN_SPEED:
             self._percentage_fan_speed = value
 
@@ -121,12 +126,13 @@ class EasyControlsEfficiencySensor(SensorEntity):
     For more details: https://www.engineeringtoolbox.com/heat-recovery-efficiency-d_201.html
     """
 
-    def __init__(self, coordinator: EasyControlsDataUpdateCoordinator):
+    def __init__(self: Self, coordinator: EasyControlsDataUpdateCoordinator):
         """
         Initialize a new instance of `EasyControlsEfficiencySensor` class.
 
         Args:
-            controller: The thread safe Helios Easy Controls controller.
+          coordinator: The thread safe Helios Easy Controls controller.
+
         """
         self.entity_description = SensorEntityDescription(
             key="heat_recover_efficiency",
@@ -145,18 +151,28 @@ class EasyControlsEfficiencySensor(SensorEntity):
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
-        def update_listener(variable: ModbusVariable[Any], value: Any):
+        def update_listener[T](variable: ModbusVariable[T], value: T) -> None:
             self._value_updated(variable, value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when the entity is added to Home Assistant.
+
+        It registers the update listener to the coordinator.
+        """
         self._coordinator.add_listener(VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener)
         self._coordinator.add_listener(VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener)
         self._coordinator.add_listener(VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when the entity will be removed from Home Assistant.
+
+        It removes the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(VARIABLE_TEMPERATURE_OUTSIDE_AIR, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_TEMPERATURE_SUPPLY_AIR, self._update_listener)
         self._coordinator.remove_listener(VARIABLE_TEMPERATURE_EXTRACT_AIR, self._update_listener)
@@ -164,9 +180,10 @@ class EasyControlsEfficiencySensor(SensorEntity):
 
     @property
     def should_poll(self: Self) -> bool:
+        """Gets the value indicates whether the sensor should be polled."""
         return False
 
-    def _value_updated(self: Self, variable: ModbusVariable[Any], value: Any):
+    def _value_updated[T](self: Self, variable: ModbusVariable[T], value: T) -> None:
         if variable == VARIABLE_TEMPERATURE_OUTSIDE_AIR:
             self._outside_air_temperature = value
         elif variable == VARIABLE_TEMPERATURE_SUPPLY_AIR:
@@ -180,18 +197,17 @@ class EasyControlsEfficiencySensor(SensorEntity):
             or self._extract_air_temperature is None
         ):
             self._attr_native_value = None
-        else:
-            if abs(self._extract_air_temperature - self._outside_air_temperature) > 0.5:
-                self._attr_native_value = abs(
-                    round(
-                        (self._supply_air_temperature - self._outside_air_temperature)
-                        / (self._extract_air_temperature - self._outside_air_temperature)
-                        * 100,
-                        2,
-                    )
+        elif abs(self._extract_air_temperature - self._outside_air_temperature) > 0.5:  # noqa: PLR2004
+            self._attr_native_value = abs(
+                round(
+                    (self._supply_air_temperature - self._outside_air_temperature)
+                    / (self._extract_air_temperature - self._outside_air_temperature)
+                    * 100,
+                    2,
                 )
-            else:
-                self._attr_native_value = 0
+            )
+        else:
+            self._attr_native_value = 0
 
         self._attr_available = self._attr_native_value is not None
         self.schedule_update_ha_state(False)
@@ -205,7 +221,7 @@ class EasyControlFlagSensor(SensorEntity):
     """
 
     def __init__(
-        self,
+        self: Self,
         coordinator: EasyControlsDataUpdateCoordinator,
         variable: IntModbusVariable,
         flags: dict[int, str],
@@ -224,6 +240,7 @@ class EasyControlFlagSensor(SensorEntity):
                 the related text as the value.
             description:
                 The sensor entity description.
+
         """
         self.entity_description = description
         self._coordinator = coordinator
@@ -234,30 +251,43 @@ class EasyControlFlagSensor(SensorEntity):
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
-        # pylint: disable=unused-argument
-        def update_listener(variable: IntModbusVariable, value: int):
+        def update_listener(
+            variable: IntModbusVariable,  # noqa: ARG001
+            value: int,
+        ) -> None:
             self._value_updated(value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when the entity is added to Home Assistant.
+
+        It registers the update listener to the coordinator.
+        """
         self._coordinator.add_listener(self._variable, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when the entity will be removed from Home Assistant.
+
+        It removes the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(self._variable, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     @property
     def should_poll(self: Self) -> bool:
+        """Gets the value indicates whether the sensor should be polled."""
         return False
 
-    def _value_updated(self: Self, value: int):
+    def _value_updated(self: Self, value: int) -> None:
         self._attr_native_value = self._get_string(value)
         self._attr_available = self._attr_native_value is not None
         self.schedule_update_ha_state(False)
 
-    def _get_string(self, value: int) -> str:
+    def _get_string(self: Self, value: int) -> str:
         """
         Converts the specified integer to its
         text representation.
@@ -278,7 +308,6 @@ class EasyControlFlagSensor(SensorEntity):
         return string
 
 
-# pylint: disable=invalid-name
 T = TypeVar("T")
 
 
@@ -304,6 +333,7 @@ class EasyControlsSensor(SensorEntity, Generic[T]):
                 The Modbus variable.
             description:
                 The sensor description.
+
         """
         self.entity_description = description
         self._coordinator = coordinator
@@ -313,25 +343,35 @@ class EasyControlsSensor(SensorEntity, Generic[T]):
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
-        # pylint: disable=unused-argument
-        def update_listener(variable: ModbusVariable, value: T):
+        def update_listener(variable: ModbusVariable, value: T) -> None:  # noqa: ARG001
             self._value_updated(value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when the entity is added to Home Assistant.
+
+        It registers the update listener to the coordinator.
+        """
         self._coordinator.add_listener(self._variable, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when the entity will be removed from Home Assistant.
+
+        It removes the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(self._variable, self._update_listener)
         return await super().async_will_remove_from_hass()
 
     @property
     def should_poll(self: Self) -> bool:
+        """Gets the value indicates whether the sensor should be polled."""
         return False
 
-    def _value_updated(self: Self, value: T):
+    def _value_updated(self: Self, value: T) -> None:
         self._attr_native_value = value
         self._attr_available = self._attr_native_value is not None
         self.schedule_update_ha_state(False)
@@ -352,6 +392,7 @@ async def async_setup_entry(
 
     Returns:
         The value indicates whether the setup succeeded.
+
     """
     _LOGGER.info("Setting up Helios EasyControls sensors.")
 

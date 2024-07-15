@@ -1,7 +1,7 @@
 """The configuration flow for Helios Easy Controls integration."""
 
 import logging
-from typing import Any, Union
+from typing import Any, Self
 
 import voluptuous as vol
 from eazyctrl import AsyncEazyController
@@ -20,16 +20,12 @@ _LOGGER = logging.getLogger(__name__)
 
 @config_entries.HANDLERS.register(DOMAIN)
 class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """
-    Configuration flow handler for Helios Easy Controls integration.
-    """
+    """Configuration flow handler for Helios Easy Controls integration."""
 
     VERSION = 1
 
-    async def async_step_user(self, user_input: Union[dict[str, Any], None] = None) -> FlowResult:
-        """
-        Handles the step when integration added from the UI.
-        """
+    async def async_step_user(self: Self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Handles the step when integration added from the UI."""
         data_schema = vol.Schema({vol.Required(CONF_HOST): str, vol.Required(CONF_NAME): str})
 
         if user_input is not None:
@@ -44,9 +40,8 @@ class EasyControlsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 mac_address = await controller.get_variable(
                     VARIABLE_MAC_ADDRESS.name, VARIABLE_MAC_ADDRESS.size
                 )
-            # pylint: disable=broad-except
-            except Exception as error:
-                _LOGGER.error("Error while creating controller: %s", error)
+            except Exception:
+                _LOGGER.exception("Error while creating controlle.")
 
                 return self.async_show_form(
                     step_id="user",

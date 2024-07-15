@@ -16,8 +16,10 @@ from custom_components.easycontrols.coordinator import (
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=unused-argument
-async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+async def async_setup(
+    hass: HomeAssistantType,
+    config: ConfigType,  # noqa: ARG001
+) -> bool:
     """
     Set up the Helios Easy Controls component.
 
@@ -27,6 +29,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
 
     Returns:
         The value indicates whether the setup succeeded.
+
     """
     hass.data[DOMAIN] = {DATA_COORDINATOR: {}}
     return True
@@ -42,8 +45,8 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
 
     Returns:
         The value indicates whether the setup succeeded.
-    """
 
+    """
     if not is_coordinator_exists(hass, config_entry.data[CONF_MAC]):
         try:
             coordinator = await create_coordinator(
@@ -52,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
                 config_entry.data[CONF_HOST],
             )
         except Exception as exception:
-            _LOGGER.error(exception)
+            _LOGGER.exception("Could not create initialize coordinator.")
             raise ConfigEntryNotReady("Error during initialization") from exception
 
         set_coordinator(hass, coordinator)
@@ -77,6 +80,7 @@ async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry)
 
     Returns:
         The value indicates whether the unloading succeeded.
+
     """
     if is_coordinator_exists(hass, config_entry.data[CONF_MAC]):
         coordinator = get_coordinator(hass, config_entry.data[CONF_MAC])
@@ -101,6 +105,7 @@ def is_coordinator_exists(hass: HomeAssistantType, mac_address: str) -> bool:
     Returns:
         The value indicates whether a coordinator already registered
         in hass.data for the given MAC address.
+
     """
     return mac_address in hass.data[DOMAIN][DATA_COORDINATOR]
 
@@ -113,7 +118,8 @@ def set_coordinator(
 
     Args:
         hass: The Home Assistant instance.
-        controller: The coordinator instance to store.
+        coordinator: The coordinator instance to store.
+
     """
     hass.data[DOMAIN][DATA_COORDINATOR][coordinator.mac] = coordinator
 
@@ -128,5 +134,6 @@ def get_coordinator(hass: HomeAssistantType, mac_address: str) -> EasyControlsDa
 
     Returns:
         The thread safe Helios Easy Controls controller.
+
     """
     return hass.data[DOMAIN][DATA_COORDINATOR][mac_address]

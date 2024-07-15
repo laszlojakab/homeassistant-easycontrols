@@ -101,14 +101,14 @@ ERRORS = {
     0x08000000: "Ext. module (NHZ): Safety limiter automatic",
     0x10000000: "Ext. module (NHZ): Safety limiter manual",
     0x20000000: "Ext. module (NHZ): Frost protection WW-Reg. "
-    + "Measured via WW-return (T7) (switching threshold "
-    + "adjustable per variable list  e.g. <  7°C)",
+    "Measured via WW-return (T7) (switching threshold "
+    "adjustable per variable list  e.g. <  7°C)",
     0x40000000: "Ext. module (NHZ): Frost protection WW-Reg. "
-    + "Measured via supply air sensor (T6) (switching threshold "
-    + "adjustable per variable list  e.g. <  7°C)",
+    "Measured via supply air sensor (T6) (switching threshold "
+    "adjustable per variable list  e.g. <  7°C)",
     0x80000000: "Frost protection external WW Reg.: ( fixed < 5°C only PHI), "
-    + "measured either via (1.) Ext. module (NHZ): "
-    + "Supply air duct sensor (T6) or (2.) BASIS: Supply air duct sensor (T2)",
+    "measured either via (1.) Ext. module (NHZ): "
+    "Supply air duct sensor (T6) or (2.) BASIS: Supply air duct sensor (T2)",
 }
 
 WARNINGS = {
