@@ -9,13 +9,14 @@ jobs:
     name: Linters
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
         id: setup-python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
       - run: pip3 install homeassistant
       - run: pip3 install eazyctrl      
-      - run: pip3 install pylint
-      - run: pylint ./custom_components/easycontrols/
+      - run: pip3 install ruff
+      - run: ruff check
+      - run: ruff format
