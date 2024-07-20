@@ -5,10 +5,9 @@ from datetime import datetime, timedelta
 from typing import Any, Self
 
 from homeassistant.components.fan import (
-    SUPPORT_PRESET_MODE,
-    SUPPORT_SET_SPEED,
     FanEntity,
     FanEntityDescription,
+    FanEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
@@ -179,7 +178,7 @@ class EasyControlsFanDevice(FanEntity):
     @property
     def supported_features(self) -> int:
         """Gets the supported features flag."""
-        return SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
+        return FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE
 
     @property
     def speed_count(self) -> int:
