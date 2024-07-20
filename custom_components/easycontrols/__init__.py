@@ -4,8 +4,9 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.helpers.typing import ConfigType
 
 from custom_components.easycontrols.const import DATA_COORDINATOR, DOMAIN
 from custom_components.easycontrols.coordinator import (
@@ -17,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(
-    hass: HomeAssistantType,
+    hass: HomeAssistant,
     config: ConfigType,  # noqa: ARG001
 ) -> bool:
     """
@@ -35,7 +36,7 @@ async def async_setup(
     return True
 
 
-async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """
     Initialize the sensors and the fan based on the config entry represents a Helios device.
 
@@ -70,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """
     Executed when a config entry unloaded by Home Assistant.
 
@@ -93,7 +94,7 @@ async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry)
     return True
 
 
-def is_coordinator_exists(hass: HomeAssistantType, mac_address: str) -> bool:
+def is_coordinator_exists(hass: HomeAssistant, mac_address: str) -> bool:
     """
     Gets the value indicates whether a coordinator already registered
     in hass.data for the given MAC address
@@ -111,7 +112,7 @@ def is_coordinator_exists(hass: HomeAssistantType, mac_address: str) -> bool:
 
 
 def set_coordinator(
-    hass: HomeAssistantType, coordinator: EasyControlsDataUpdateCoordinator
+    hass: HomeAssistant, coordinator: EasyControlsDataUpdateCoordinator
 ) -> None:
     """
     Stores the specified controller in hass.data by its MAC address.
@@ -124,7 +125,7 @@ def set_coordinator(
     hass.data[DOMAIN][DATA_COORDINATOR][coordinator.mac] = coordinator
 
 
-def get_coordinator(hass: HomeAssistantType, mac_address: str) -> EasyControlsDataUpdateCoordinator:
+def get_coordinator(hass: HomeAssistant, mac_address: str) -> EasyControlsDataUpdateCoordinator:
     """
     Gets the coordinator for the given MAC address.
 
