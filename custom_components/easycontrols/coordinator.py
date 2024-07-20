@@ -12,9 +12,8 @@ from typing import Any, Final, Self, overload
 
 import async_timeout
 from eazyctrl import AsyncEazyController
-from homeassistant.core import CALLBACK_TYPE, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
-from homeassistant.helpers.typing import HomeAssistantType
 
 from custom_components.easycontrols.const import (
     VARIABLE_ARTICLE_DESCRIPTION,
@@ -102,7 +101,7 @@ class EasyControlsDataUpdateCoordinator:
     as soon as possible.
     """
 
-    def __init__(self: Self, hass: HomeAssistantType, device_name: str, host: str):
+    def __init__(self: Self, hass: HomeAssistant, device_name: str, host: str):
         """
         Initialize a new instance of `EasyControlsDataUpdaterCoordinator` class.
 
@@ -468,7 +467,7 @@ class EasyControlsDataUpdateCoordinator:
 
 
 async def create_coordinator(
-    hass: HomeAssistantType, device_name: str, host: str
+    hass: HomeAssistant, device_name: str, host: str
 ) -> EasyControlsDataUpdateCoordinator:
     """Creates and initializes a coordinator instance."""
     coordinator = EasyControlsDataUpdateCoordinator(hass, device_name, host)
