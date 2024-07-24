@@ -1,7 +1,7 @@
 """The sensor module for Helios Easy Controls integration."""
 
 import logging
-from typing import Self
+from typing import Final, Self
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -319,6 +319,7 @@ class EasyControlsSensor[T](SensorEntity):
         coordinator: EasyControlsDataUpdateCoordinator,
         variable: ModbusVariable[T],
         description: SensorEntityDescription,
+        maximum: T | None = None,
     ):
         """
         Initialize a new instance of `EasyControlsSensor` class.
@@ -330,6 +331,10 @@ class EasyControlsSensor[T](SensorEntity):
                 The Modbus variable.
             description:
                 The sensor description.
+            maximum:
+                The exclusive maximum value of the sensor. If the
+                value is equal or greater than this value, the sensor
+                will be set to unavailable.
 
         """
         self.entity_description = description
@@ -339,8 +344,12 @@ class EasyControlsSensor[T](SensorEntity):
         self._attr_device_info = DeviceInfo(
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
+        self._maximum: Final[T | None] = maximum
 
         def update_listener(variable: ModbusVariable, value: T) -> None:  # noqa: ARG001
+            if value is not None and self._maximum is not None and value >= self._maximum:
+                value = None
+
             self._value_updated(value)
 
         self._update_listener = update_listener
@@ -467,6 +476,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -480,6 +490,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -493,6 +504,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -506,6 +518,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
