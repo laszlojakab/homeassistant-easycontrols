@@ -29,6 +29,14 @@ from custom_components.easycontrols.const import (
     VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
     VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
     VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_1,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_2,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_3,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_4,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_5,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_6,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_7,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_8,
     VARIABLE_EXTRACT_AIR_FAN_STAGE,
     VARIABLE_EXTRACT_AIR_RPM,
     VARIABLE_FAN_STAGE,
@@ -591,6 +599,35 @@ async def async_setup_entry(
                         VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
                         VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
                         VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
+                    )
+                )
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_ftf_temperature_{index+1}",
+                        name=f"{coordinator.device_name} external FTF temperature {index+1}",
+                        icon="mdi:thermometer",
+                        native_unit_of_measurement="°C",
+                        device_class=SensorDeviceClass.TEMPERATURE,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_1,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_2,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_3,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_4,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_5,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_6,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_7,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_8,
                     )
                 )
             ),
