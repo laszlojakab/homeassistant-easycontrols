@@ -21,6 +21,14 @@ from custom_components.easycontrols.const import (
     ERRORS,
     INFOS,
     VARIABLE_ERRORS,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_1,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_2,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_3,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_4,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_5,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
     VARIABLE_EXTRACT_AIR_FAN_STAGE,
     VARIABLE_EXTRACT_AIR_RPM,
     VARIABLE_FAN_STAGE,
@@ -556,6 +564,35 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_ftf_humidity_{index+1}",
+                        name=f"{coordinator.device_name} external FTF humidity {index+1}",
+                        icon="mdi:water-percent",
+                        native_unit_of_measurement="%",
+                        device_class=SensorDeviceClass.HUMIDITY,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_1,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_2,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_3,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_4,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_5,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
+                    )
+                )
             ),
             EasyControlsSensor(
                 coordinator,
