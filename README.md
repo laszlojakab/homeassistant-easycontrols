@@ -60,6 +60,7 @@ The integration adds the following entities and services to Home Assistant:
     - FTF Humidity
     - FTF Temperature
     - CO₂
+    - VOC
   - Operation related sensors:
     - Fan speed percentage
     - Fan stage

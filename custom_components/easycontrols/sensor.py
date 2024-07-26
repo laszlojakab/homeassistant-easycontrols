@@ -45,6 +45,14 @@ from custom_components.easycontrols.const import (
     VARIABLE_EXTERNAL_FTF_TEMPERATURE_6,
     VARIABLE_EXTERNAL_FTF_TEMPERATURE_7,
     VARIABLE_EXTERNAL_FTF_TEMPERATURE_8,
+    VARIABLE_EXTERNAL_VOC_1,
+    VARIABLE_EXTERNAL_VOC_2,
+    VARIABLE_EXTERNAL_VOC_3,
+    VARIABLE_EXTERNAL_VOC_4,
+    VARIABLE_EXTERNAL_VOC_5,
+    VARIABLE_EXTERNAL_VOC_6,
+    VARIABLE_EXTERNAL_VOC_7,
+    VARIABLE_EXTERNAL_VOC_8,
     VARIABLE_EXTRACT_AIR_FAN_STAGE,
     VARIABLE_EXTRACT_AIR_RPM,
     VARIABLE_FAN_STAGE,
@@ -664,6 +672,34 @@ async def async_setup_entry(
                         VARIABLE_EXTERNAL_CO2_6,
                         VARIABLE_EXTERNAL_CO2_7,
                         VARIABLE_EXTERNAL_CO2_8,
+                    )
+                )
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_voc_{index+1}",
+                        name=f"{coordinator.device_name} external VOC {index+1}",
+                        native_unit_of_measurement="ppm",
+                        device_class=SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_VOC_1,
+                        VARIABLE_EXTERNAL_VOC_2,
+                        VARIABLE_EXTERNAL_VOC_3,
+                        VARIABLE_EXTERNAL_VOC_4,
+                        VARIABLE_EXTERNAL_VOC_5,
+                        VARIABLE_EXTERNAL_VOC_6,
+                        VARIABLE_EXTERNAL_VOC_7,
+                        VARIABLE_EXTERNAL_VOC_8,
                     )
                 )
             ),
