@@ -59,6 +59,7 @@ The integration adds the following entities and services to Home Assistant:
   - External sensors:
     - FTF Humidity
     - FTF Temperature
+    - CO₂
   - Operation related sensors:
     - Fan speed percentage
     - Fan stage
