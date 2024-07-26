@@ -61,13 +61,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
         set_coordinator(hass, coordinator)
 
-    hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, "fan"))
-
-    hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, "sensor"))
-
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "binary_sensor")
+        hass.config_entries.async_forward_entry_setups(
+            config_entry, ("fan", "sensor", "binary_sensor")
+        )
     )
+
     return True
 
 
@@ -111,9 +110,7 @@ def is_coordinator_exists(hass: HomeAssistant, mac_address: str) -> bool:
     return mac_address in hass.data[DOMAIN][DATA_COORDINATOR]
 
 
-def set_coordinator(
-    hass: HomeAssistant, coordinator: EasyControlsDataUpdateCoordinator
-) -> None:
+def set_coordinator(hass: HomeAssistant, coordinator: EasyControlsDataUpdateCoordinator) -> None:
     """
     Stores the specified controller in hass.data by its MAC address.
 
