@@ -66,6 +66,7 @@ PRESET_AUTO = "auto"
 
 SERVICE_START_PARTY_MODE = "start_party_mode"
 SERVICE_STOP_PARTY_MODE = "stop_party_mode"
+SERVICE_SET_FAN_STAGE = "set_fan_stage"
 
 OPERATING_MODE_MANUAL = 1
 OPERATING_MODE_AUTO = 0
