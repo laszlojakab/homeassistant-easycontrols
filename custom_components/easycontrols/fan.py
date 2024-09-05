@@ -178,7 +178,12 @@ class EasyControlsFanDevice(FanEntity):
     @property
     def supported_features(self) -> int:
         """Gets the supported features flag."""
-        return FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE
+        return (
+            FanEntityFeature.SET_SPEED
+            | FanEntityFeature.PRESET_MODE
+            | FanEntityFeature.TURN_ON
+            | FanEntityFeature.TURN_OFF
+        )
 
     @property
     def speed_count(self) -> int:
