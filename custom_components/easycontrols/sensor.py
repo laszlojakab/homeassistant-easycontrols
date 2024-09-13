@@ -1,7 +1,7 @@
 """The sensor module for Helios Easy Controls integration."""
 
 import logging
-from typing import Self
+from typing import Final, Self
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -21,6 +21,38 @@ from custom_components.easycontrols.const import (
     ERRORS,
     INFOS,
     VARIABLE_ERRORS,
+    VARIABLE_EXTERNAL_CO2_1,
+    VARIABLE_EXTERNAL_CO2_2,
+    VARIABLE_EXTERNAL_CO2_3,
+    VARIABLE_EXTERNAL_CO2_4,
+    VARIABLE_EXTERNAL_CO2_5,
+    VARIABLE_EXTERNAL_CO2_6,
+    VARIABLE_EXTERNAL_CO2_7,
+    VARIABLE_EXTERNAL_CO2_8,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_1,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_2,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_3,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_4,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_5,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
+    VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_1,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_2,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_3,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_4,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_5,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_6,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_7,
+    VARIABLE_EXTERNAL_FTF_TEMPERATURE_8,
+    VARIABLE_EXTERNAL_VOC_1,
+    VARIABLE_EXTERNAL_VOC_2,
+    VARIABLE_EXTERNAL_VOC_3,
+    VARIABLE_EXTERNAL_VOC_4,
+    VARIABLE_EXTERNAL_VOC_5,
+    VARIABLE_EXTERNAL_VOC_6,
+    VARIABLE_EXTERNAL_VOC_7,
+    VARIABLE_EXTERNAL_VOC_8,
     VARIABLE_EXTRACT_AIR_FAN_STAGE,
     VARIABLE_EXTRACT_AIR_RPM,
     VARIABLE_FAN_STAGE,
@@ -319,6 +351,7 @@ class EasyControlsSensor[T](SensorEntity):
         coordinator: EasyControlsDataUpdateCoordinator,
         variable: ModbusVariable[T],
         description: SensorEntityDescription,
+        maximum: T | None = None,
     ):
         """
         Initialize a new instance of `EasyControlsSensor` class.
@@ -330,6 +363,10 @@ class EasyControlsSensor[T](SensorEntity):
                 The Modbus variable.
             description:
                 The sensor description.
+            maximum:
+                The exclusive maximum value of the sensor. If the
+                value is equal or greater than this value, the sensor
+                will be set to unavailable.
 
         """
         self.entity_description = description
@@ -339,8 +376,12 @@ class EasyControlsSensor[T](SensorEntity):
         self._attr_device_info = DeviceInfo(
             connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
+        self._maximum: Final[T | None] = maximum
 
         def update_listener(variable: ModbusVariable, value: T) -> None:  # noqa: ARG001
+            if value is not None and self._maximum is not None and value >= self._maximum:
+                value = None
+
             self._value_updated(value)
 
         self._update_listener = update_listener
@@ -467,6 +508,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -480,6 +522,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -493,6 +536,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -506,6 +550,7 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                maximum=9999,
             ),
             EasyControlsSensor(
                 coordinator,
@@ -543,6 +588,120 @@ async def async_setup_entry(
                     state_class=SensorStateClass.MEASUREMENT,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_ftf_humidity_{index+1}",
+                        name=f"{coordinator.device_name} external FTF humidity {index+1}",
+                        icon="mdi:water-percent",
+                        native_unit_of_measurement="%",
+                        device_class=SensorDeviceClass.HUMIDITY,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_1,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_2,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_3,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_4,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_5,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_6,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_7,
+                        VARIABLE_EXTERNAL_FTF_HUMIDITY_8,
+                    )
+                )
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_ftf_temperature_{index+1}",
+                        name=f"{coordinator.device_name} external FTF temperature {index+1}",
+                        icon="mdi:thermometer",
+                        native_unit_of_measurement="°C",
+                        device_class=SensorDeviceClass.TEMPERATURE,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_1,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_2,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_3,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_4,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_5,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_6,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_7,
+                        VARIABLE_EXTERNAL_FTF_TEMPERATURE_8,
+                    )
+                )
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_co2_{index+1}",
+                        name=f"{coordinator.device_name} external CO₂ {index+1}",
+                        native_unit_of_measurement="ppm",
+                        device_class=SensorDeviceClass.CO2,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_CO2_1,
+                        VARIABLE_EXTERNAL_CO2_2,
+                        VARIABLE_EXTERNAL_CO2_3,
+                        VARIABLE_EXTERNAL_CO2_4,
+                        VARIABLE_EXTERNAL_CO2_5,
+                        VARIABLE_EXTERNAL_CO2_6,
+                        VARIABLE_EXTERNAL_CO2_7,
+                        VARIABLE_EXTERNAL_CO2_8,
+                    )
+                )
+            ),
+            *(
+                EasyControlsSensor(
+                    coordinator,
+                    variable,
+                    SensorEntityDescription(
+                        key=f"external_voc_{index+1}",
+                        name=f"{coordinator.device_name} external VOC {index+1}",
+                        native_unit_of_measurement="ppm",
+                        device_class=SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        entity_registry_enabled_default=False,
+                    ),
+                    maximum=9999,
+                )
+                for index, variable in enumerate(
+                    (
+                        VARIABLE_EXTERNAL_VOC_1,
+                        VARIABLE_EXTERNAL_VOC_2,
+                        VARIABLE_EXTERNAL_VOC_3,
+                        VARIABLE_EXTERNAL_VOC_4,
+                        VARIABLE_EXTERNAL_VOC_5,
+                        VARIABLE_EXTERNAL_VOC_6,
+                        VARIABLE_EXTERNAL_VOC_7,
+                        VARIABLE_EXTERNAL_VOC_8,
+                    )
+                )
             ),
             EasyControlsSensor(
                 coordinator,
