@@ -1,4 +1,5 @@
 party_mode:
+  name: Party Mode
   description: Change fan speed for limited time. Deprecated, use start_party_mode and stop_party_mode instead.
   fields:
     entity_id:
@@ -11,20 +12,55 @@ party_mode:
       description: Duration in minutes
       example: 60
 start_party_mode:
+  name: Start Party Mode
   description: Starts the party mode for a limited time.
   fields:
     entity_id:
-      description: Name of the entity.
+      name: "Helios Device"
+      description: "Device to set the party mode"
       example: "fan.helios"
+      default: "fan.helios"
+      required: true
+      selector:
+        entity:
+          filter:
+            integration: easycontrols
+            domain: fan
     speed:
-      description: "Boost speed. Available: basic, rated, intensive, maximum"
-      example: intensive
+      name: "Fan Speed"
+      description: "The speed of the party mode. Set to None to keep the previously set value."
+      selector:
+        select:
+          options:
+            - label: Fan Stage 1
+              value: basic
+            - label: Fan Stage 2
+              value: rated
+            - label: Fan Stage 3
+              value: intensive
+            - label: Fan Stage 4
+              value: maximum
     duration:
-      description: Duration in minutes
+      name: "Duration"
+      description: "The duration of the party mode. Set to None to keep the previously set value."
       example: 60
+      default: 60
+      selector:
+        number:
+          min: 5
+          max: 180
 stop_party_mode:
+  name: Stop Party Mode
   description: Stops the party mode.
   fields:
     entity_id:
-      description: Name of the entity.
+      name: "Helios Device"
+      description: "Device to set the party mode"
       example: "fan.helios"
+      default: "fan.helios"
+      required: true
+      selector:
+        entity:
+          filter:
+            integration: easycontrols
+            domain: fan

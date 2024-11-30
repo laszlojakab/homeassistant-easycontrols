@@ -1,7 +1,7 @@
-"""
-The binary sensor module for Helios Easy Controls integration.
-"""
+"""The binary sensor module for Helios Easy Controls integration."""
+
 import logging
+from typing import Self
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -10,11 +10,10 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import HomeAssistantType
-from typing_extensions import Self
 
 from custom_components.easycontrols import get_coordinator
 from custom_components.easycontrols.const import (
@@ -27,14 +26,11 @@ from custom_components.easycontrols.modbus_variable import BoolModbusVariable
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-instance-attributes
 class EasyControlBinarySensor(BinarySensorEntity):
-    """
-    Represents a ModBus variable as a binary sensor.
-    """
+    """Represents a ModBus variable as a binary sensor."""
 
     def __init__(
-        self,
+        self: Self,
         coordinator: EasyControlsDataUpdateCoordinator,
         variable: BoolModbusVariable,
         description: BinarySensorEntityDescription,
@@ -49,6 +45,7 @@ class EasyControlBinarySensor(BinarySensorEntity):
                 The Modbus variable.
             description:
                 The binary sensor description.
+
         """
         self.entity_description = description
         self._coordinator = coordinator
@@ -56,39 +53,46 @@ class EasyControlBinarySensor(BinarySensorEntity):
         self._attr_unique_id = self._coordinator.mac + self.name
         self._attr_should_poll = False
         self._attr_device_info = DeviceInfo(
-            connections={
-                (device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)
-            }
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._coordinator.mac)}
         )
 
         def update_listener(
-            # pylint: disable=unused-argument
-            variable: BoolModbusVariable,
+            variable: BoolModbusVariable,  # noqa: ARG001
             value: bool,
-        ):
+        ) -> None:
             self._value_updated(value)
 
         self._update_listener = update_listener
 
     async def async_added_to_hass(self: Self) -> None:
+        """
+        Called when an entity is added to Home Assistant.
+
+        Add the update listener to the coordinator.
+        """
         self._coordinator.add_listener(self._variable, self._update_listener)
         return await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
+        """
+        Called when an entity is about to be removed from Home Assistant.
+
+        Remove the update listener from the coordinator.
+        """
         self._coordinator.remove_listener(self._variable, self._update_listener)
         return await super().async_will_remove_from_hass()
 
-    def _value_updated(self: Self, value: bool):
+    def _value_updated(self: Self, value: bool) -> None:
         self._attr_is_on = value
         self._attr_available = self._attr_is_on is not None
         self.schedule_update_ha_state(False)
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType,
+    hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-):
+) -> None:
     """
     Setup of Helios Easy Controls sensors for the specified config_entry.
 
@@ -102,6 +106,7 @@ async def async_setup_entry(
 
     Returns:
         The value indicates whether the setup succeeded.
+
     """
     _LOGGER.info("Setting up Helios EasyControls binary sensors.")
 

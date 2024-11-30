@@ -1,4 +1,5 @@
 """Define Helios Easy Controls constants."""
+
 from custom_components.easycontrols.modbus_variable import (
     BoolModbusVariable,
     FlagModbusVariable,
@@ -33,6 +34,38 @@ VARIABLE_TEMPERATURE_OUTSIDE_AIR = FloatModbusVariable("v00104", 7)
 VARIABLE_TEMPERATURE_SUPPLY_AIR = FloatModbusVariable("v00105", 7)
 VARIABLE_TEMPERATURE_OUTGOING_AIR = FloatModbusVariable("v00106", 7)
 VARIABLE_TEMPERATURE_EXTRACT_AIR = FloatModbusVariable("v00107", 7)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_1 = FloatModbusVariable("v00111", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_2 = FloatModbusVariable("v00112", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_3 = FloatModbusVariable("v00113", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_4 = FloatModbusVariable("v00114", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_5 = FloatModbusVariable("v00115", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_6 = FloatModbusVariable("v00116", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_7 = FloatModbusVariable("v00117", 4)
+VARIABLE_EXTERNAL_FTF_HUMIDITY_8 = FloatModbusVariable("v00118", 4)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_1 = FloatModbusVariable("v00119", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_2 = FloatModbusVariable("v00120", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_3 = FloatModbusVariable("v00121", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_4 = FloatModbusVariable("v00122", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_5 = FloatModbusVariable("v00123", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_6 = FloatModbusVariable("v00124", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_7 = FloatModbusVariable("v00125", 7)
+VARIABLE_EXTERNAL_FTF_TEMPERATURE_8 = FloatModbusVariable("v00126", 7)
+VARIABLE_EXTERNAL_CO2_1 = IntModbusVariable("v00128", 4)
+VARIABLE_EXTERNAL_CO2_2 = IntModbusVariable("v00129", 4)
+VARIABLE_EXTERNAL_CO2_3 = IntModbusVariable("v00130", 4)
+VARIABLE_EXTERNAL_CO2_4 = IntModbusVariable("v00131", 4)
+VARIABLE_EXTERNAL_CO2_5 = IntModbusVariable("v00132", 4)
+VARIABLE_EXTERNAL_CO2_6 = IntModbusVariable("v00133", 4)
+VARIABLE_EXTERNAL_CO2_7 = IntModbusVariable("v00134", 4)
+VARIABLE_EXTERNAL_CO2_8 = IntModbusVariable("v00135", 4)
+VARIABLE_EXTERNAL_VOC_1 = IntModbusVariable("v00136", 4)
+VARIABLE_EXTERNAL_VOC_2 = IntModbusVariable("v00137", 4)
+VARIABLE_EXTERNAL_VOC_3 = IntModbusVariable("v00138", 4)
+VARIABLE_EXTERNAL_VOC_4 = IntModbusVariable("v00139", 4)
+VARIABLE_EXTERNAL_VOC_5 = IntModbusVariable("v00140", 4)
+VARIABLE_EXTERNAL_VOC_6 = IntModbusVariable("v00141", 4)
+VARIABLE_EXTERNAL_VOC_7 = IntModbusVariable("v00142", 4)
+VARIABLE_EXTERNAL_VOC_8 = IntModbusVariable("v00143", 4)
 VARIABLE_SERIAL_NUMBER = StrModbusVariable("v00303", 16)
 VARIABLE_SUPPLY_AIR_RPM = IntModbusVariable("v00348", 4)
 VARIABLE_EXTRACT_AIR_RPM = IntModbusVariable("v00349", 4)
@@ -100,14 +133,14 @@ ERRORS = {
     0x08000000: "Ext. module (NHZ): Safety limiter automatic",
     0x10000000: "Ext. module (NHZ): Safety limiter manual",
     0x20000000: "Ext. module (NHZ): Frost protection WW-Reg. "
-    + "Measured via WW-return (T7) (switching threshold "
-    + "adjustable per variable list  e.g. <  7°C)",
+    "Measured via WW-return (T7) (switching threshold "
+    "adjustable per variable list  e.g. <  7°C)",
     0x40000000: "Ext. module (NHZ): Frost protection WW-Reg. "
-    + "Measured via supply air sensor (T6) (switching threshold "
-    + "adjustable per variable list  e.g. <  7°C)",
+    "Measured via supply air sensor (T6) (switching threshold "
+    "adjustable per variable list  e.g. <  7°C)",
     0x80000000: "Frost protection external WW Reg.: ( fixed < 5°C only PHI), "
-    + "measured either via (1.) Ext. module (NHZ): "
-    + "Supply air duct sensor (T6) or (2.) BASIS: Supply air duct sensor (T2)",
+    "measured either via (1.) Ext. module (NHZ): "
+    "Supply air duct sensor (T6) or (2.) BASIS: Supply air duct sensor (T2)",
 }
 
 WARNINGS = {

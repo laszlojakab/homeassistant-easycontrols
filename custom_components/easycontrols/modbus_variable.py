@@ -1,26 +1,17 @@
-"""
-The module contains Modbus variables.
-"""
+"""The module contains Modbus variables."""
+
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Final, Generic, TypeVar
-
-from typing_extensions import Self
-
-# pylint: disable=invalid-name
-TModBusVariableValue = TypeVar("TModBusVariableValue")
+from typing import Final, Self
 
 
 @dataclass
-class ModbusVariable(Generic[TModBusVariableValue]):
-    """
-    Represents a Modbus variable.
-    """
+class ModbusVariable[TModBusVariableValue]:
+    """Represents a Modbus variable."""
 
-    # pylint: disable=invalid-name
     name: Final[str]
     """ The Modbus variable name. """
 
-    # pylint: disable=invalid-name
     size: Final[int]
     """ The length of the variable value. """
 
@@ -31,17 +22,24 @@ class ModbusVariable(Generic[TModBusVariableValue]):
     """ The converter function to convert value send to device. """
 
     def __repr__(self) -> str:
+        """
+        Returns a string representation of the ModbusVariable object.
+
+        The string representation includes the name and size of the variable.
+
+        Returns
+          The string representation of the ModbusVariable object.
+
+        """
         return f"{self.name} [{self.size}]"
 
     def __lt__(self: Self, other: Self) -> bool:
+        """Implements the less than operator for the ModbusVariable class."""
         return self.name < other.name
 
 
-# pylint: disable=too-few-public-methods
 class BoolModbusVariable(ModbusVariable[bool]):
-    """
-    Represents a boolean type Modbus variable.
-    """
+    """Represents a boolean type Modbus variable."""
 
     def __init__(self: Self, name: str):
         """
@@ -49,32 +47,28 @@ class BoolModbusVariable(ModbusVariable[bool]):
 
         Args:
             name: The Modbus variable name
+
         """
         super().__init__(name, 1, lambda s: s == "1", lambda b: "1" if b else "0")
 
 
-# pylint: disable=too-few-public-methods
 class StrModbusVariable(ModbusVariable[str]):
-    """
-    Represents a string type Modbus variable.
-    """
+    """Represents a string type Modbus variable."""
 
     def __init__(self: Self, name: str, size: int):
         """
         Initialize a new instance of `StrModbusVariable` class.
 
-        Args
+        Args:
             name: The Modbus variable name.
             size: The variable value length.
+
         """
         super().__init__(name, size)
 
 
-# pylint: disable=too-few-public-methods
 class IntModbusVariable(ModbusVariable[int]):
-    """
-    Represents an integer type Modbus variable.
-    """
+    """Represents an integer type Modbus variable."""
 
     def __init__(self: Self, name: str, size: int):
         """
@@ -83,11 +77,11 @@ class IntModbusVariable(ModbusVariable[int]):
         Args:
             name: The Modbus variable name.
             size: The variable value length.
+
         """
         super().__init__(name, size, int, str)
 
 
-# pylint: disable=too-few-public-methods
 class OperationHoursModbusVariable(ModbusVariable[float]):
     """
     Represents an operation hours type Modbus variable.
@@ -102,17 +96,13 @@ class OperationHoursModbusVariable(ModbusVariable[float]):
         Args:
             name: The Modbus variable name.
             size: The variable value length.
+
         """
-        super().__init__(
-            name, size, lambda x: round(int(x) / 60.0, 2), lambda x: str(x * 60)
-        )
+        super().__init__(name, size, lambda x: round(int(x) / 60.0, 2), lambda x: str(x * 60))
 
 
-# pylint: disable=too-few-public-methods
 class FloatModbusVariable(ModbusVariable[float]):
-    """
-    Represents a float type Modbus variable.
-    """
+    """Represents a float type Modbus variable."""
 
     def __init__(self: Self, name: str, size: int):
         """
@@ -121,15 +111,13 @@ class FloatModbusVariable(ModbusVariable[float]):
         Args:
             name: The Modbus variable name.
             size: The variable value length.
+
         """
         super().__init__(name, size, float, str)
 
 
-# pylint: disable=too-few-public-methods
 class FlagModbusVariable(ModbusVariable[bool]):
-    """
-    Represents a flag type Modbus variable.
-    """
+    """Represents a flag type Modbus variable."""
 
     def __init__(self: Self, name: str, size: int, flag: int):
         """
@@ -139,5 +127,6 @@ class FlagModbusVariable(ModbusVariable[bool]):
             name: The Modbus variable name.
             size: The variable value length.
             flag: The flag value.
+
         """
         super().__init__(name, size, lambda x: (int(x) & flag) == flag)
