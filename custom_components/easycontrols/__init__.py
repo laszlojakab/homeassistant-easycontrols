@@ -1,5 +1,6 @@
 """Helios Easy Controls integration."""
-from logging import WARNING, getLogger
+
+import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
@@ -13,8 +14,7 @@ from custom_components.easycontrols.coordinator import (
     create_coordinator,
 )
 
-getLogger("asyncio").setLevel(WARNING)
-_LOGGER = getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(
@@ -63,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setups(
-            config_entry, ("fan", "sensor", "binary_sensor", "number")
+            config_entry, ("fan", "sensor", "binary_sensor")
         )
     )
 
